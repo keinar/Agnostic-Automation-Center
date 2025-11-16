@@ -22,7 +22,12 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html', { open: 'never' }],
-    ['list']
+    ['list'],
+    ['allure-playwright', {
+      detail: true,
+      outputFolder: 'allure-results',
+      suiteTitle: false
+    }]
   ],
 
   timeout: 10 * 1000,
@@ -41,11 +46,13 @@ export default defineConfig({
 
     viewport: { width: 1920, height: 1080 },
     storageState: 'playwright/.auth/auth-state.json',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
 
   projects: [
     {
-      name: 'ui-tests-chrome',
+      name: 'ui-tests',
       testDir: './tests/ui',
       use: { 
         ...devices['Desktop Chrome'],

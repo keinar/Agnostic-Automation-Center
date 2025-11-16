@@ -1,6 +1,7 @@
 import { request, FullConfig } from '@playwright/test';
 import * as dotenv from 'dotenv';
-import * as fs from 'fs';
+import * as fs from 'fs'; // Import File System
+
 dotenv.config();
 
 const authFile = 'playwright/.auth/auth-state.json';
@@ -16,7 +17,6 @@ async function globalSetup(config: FullConfig) {
   }
 
   const loginURL = new URL('api/users/login', baseURL).toString();
-  
   console.log(`[GlobalSetup] Attempting login to: ${loginURL}`);
 
   const response = await apiContext.post(loginURL, {
@@ -32,20 +32,32 @@ async function globalSetup(config: FullConfig) {
     console.error(`Response body: ${await response.text()}`);
     throw new Error("Global setup failed: Could not authenticate.");
   }
-  
-  const responseBody = await response.json();
-  const token = responseBody.token;
 
-  if (!token) {
+  const responseBody = await response.json();
+
+  if (!responseBody.token) {
     throw new Error("Global setup failed: Token was not found in login response body.");
   }
 
-  // 2. Manually write the token to the auth file
-  // We create our own simple JSON structure
-  fs.writeFileSync(authFile, JSON.stringify({ token: token }));
+  const authState = {
+    cookies: [],
+    origins: [
+      {
+        origin: baseURL,
+        localStorage: [
+          {
+            name: 'user',
+            value: JSON.stringify(responseBody)
+          }
+        ]
+      }
+    ]
+  };
+
+  fs.writeFileSync(authFile, JSON.stringify(authState));
 
   await apiContext.dispose();
-  console.log(`[GlobalSetup] Complete. Auth state saved to ${authFile}`);
+  console.log(`[GlobalSetup] Complete. Auth state saved to ${authFile} in Playwright format.`);
 }
 
 export default globalSetup;

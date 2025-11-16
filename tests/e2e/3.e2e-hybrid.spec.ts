@@ -1,19 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
 import { DashboardPage } from '../../pages/dashboardPage';
-import { LoginApp } from '../../pages/loginApp';
+// import { LoginApp } from '../../pages/loginApp'; // No longer needed
 
 /**
  * @file 3.e2e-hybrid.spec.ts
- * @description This file demonstrates a "Hybrid" E2E test.
- * It uses the API for fast data setup and teardown,
- * and the UI for validation, which is a highly efficient pattern.
+ * @description This test is truly hybrid.
+ * It starts *already authenticated* thanks to globalSetup.
  */
 test.describe('Hybrid E2E - Admin Panel Validation', () => {
 
     let apiClient: ApiClient;
     let dashboardPage: DashboardPage;
-    let loginApp: LoginApp;
     let galleryId: string;
 
     const uniqueGalleryName = `E2E-Hybrid-Test-${Date.now()}`;
@@ -25,33 +23,37 @@ test.describe('Hybrid E2E - Admin Panel Validation', () => {
 
     test.beforeEach(async ({ page, request }) => {
         apiClient = new ApiClient(request);
+        // The 'page' fixture is already authenticated here!
         dashboardPage = new DashboardPage(page);
-        loginApp = new LoginApp(page);
     });
 
     test('1. API-created gallery should appear in the UI', async ({ page }) => {
         
-        // Create gallery via API
+        // --- 1. SETUP (via API) ---
         const createResponse = await apiClient.createGallery(galleryPayload);
         expect(createResponse.status()).toBe(201);
         const body = await createResponse.json();
         galleryId = body._id; // Save the ID for cleanup
         
         
-        // Login via UI
-        await loginApp.goto();
-        await loginApp.login(process.env.ADMIN_USER!, process.env.ADMIN_PASS!);
+        // --- 2. TEST (via UI) ---
+        // Navigate directly to the dashboard (we are already logged in)
+        await dashboardPage.goto();
         await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 10000 });
             
-        
         console.log('[Test Run] Verifying gallery is visible in UI...');
-        // Assertion: Find the gallery we created on the main admin page
-        const galleryCard = page.locator('h3', { hasText: uniqueGalleryName });
-        const clientText = page.locator(`div:has([id*="clientName-"])`);
-        await expect(galleryCard).toBeVisible();
-        await expect(galleryCard).toContainText(galleryPayload.title);
-        await expect(clientText).toContainText(galleryPayload.clientName);
 
+        // 1. Find the *parent card container* that contains our unique gallery title.
+        const galleryCardContainer = page.locator('div.border', { hasText: uniqueGalleryName });
+
+        // 2. Assertion 1: Verify the whole card is visible
+        await expect(galleryCardContainer).toBeVisible();
+
+        // 3. Assertion 2: Verify the title *within* this card
+        await expect(galleryCardContainer).toContainText(galleryPayload.title);
+
+        // 4. Assertion 3: Verify the client name *within* this card
+        await expect(galleryCardContainer).toContainText(galleryPayload.clientName);
 
 
         // --- 3. TEARDOWN (via API) ---

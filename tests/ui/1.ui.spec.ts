@@ -1,29 +1,30 @@
 import { test, expect } from '@playwright/test';
-import { AdminLoginPage } from '../../pages/adminLoginPage'; // <-- Updated import path due to new folder
-
-const ADMIN_USERNAME = process.env.ADMIN_USER!;
-const ADMIN_PASSWORD = process.env.ADMIN_PASS!;
+import { DashboardPage } from '../../pages/dashboardPage';
 
 
-test.describe('Admin Panel - UI Login', () => {
+test.describe('Dashboard Page - Authenticated UI', () => {
 
-    let adminLogin: AdminLoginPage;
+    let dashboardPage: DashboardPage;
 
     test.beforeEach(async ({ page }) => {
-        adminLogin = new AdminLoginPage(page);
-        await adminLogin.goto();
+        // The 'page' fixture is automatically authenticated
+        dashboardPage = new DashboardPage(page);
     });
 
-    test('1. Successful Login', async ({ page }) => {
-        
-        await adminLogin.login(ADMIN_USERNAME, ADMIN_PASSWORD);
-        await expect(page).toHaveURL(/.*\/admin\/rooms/, { timeout: 10000 });
+
+    test('1. Should load dashboard and show create button', async () => {
+        await dashboardPage.goto();
+        await expect(dashboardPage.createGalleryButton).toBeVisible();
     });
 
-    test('2. Failed Login with wrong password', async () => {
+
+    test('2. Should be able to log out', async ({ page }) => {
+        await dashboardPage.goto();
         
-        await adminLogin.login(ADMIN_USERNAME, 'wrongpassword123');
-        await expect(adminLogin.errorMessage).toBeVisible();
-        await expect(adminLogin.errorMessage).toContainText('Invalid credentials');
+        const logoutButton = page.getByRole('button', { name: 'Logout' });
+        await logoutButton.click();
+
+        await expect(page).toHaveURL(/\/login$/, { timeout: 10000 });
+        await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
     });
 });
