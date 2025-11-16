@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
 import { DashboardPage } from '../../pages/dashboardPage';
-import { LoginPage } from '../../pages/loginPage';
+import { LoginApp } from '../../pages/loginApp';
 
 /**
  * @file 3.e2e-hybrid.spec.ts
@@ -13,6 +13,7 @@ test.describe('Hybrid E2E - Admin Panel Validation', () => {
 
     let apiClient: ApiClient;
     let dashboardPage: DashboardPage;
+    let loginApp: LoginApp;
     let galleryId: string;
 
     const uniqueGalleryName = `E2E-Hybrid-Test-${Date.now()}`;
@@ -25,7 +26,7 @@ test.describe('Hybrid E2E - Admin Panel Validation', () => {
     test.beforeEach(async ({ page, request }) => {
         apiClient = new ApiClient(request);
         dashboardPage = new DashboardPage(page);
-        loginPage = new LoginPage(page);
+        loginApp = new LoginApp(page);
     });
 
     test('1. API-created gallery should appear in the UI', async ({ page }) => {
@@ -37,22 +38,20 @@ test.describe('Hybrid E2E - Admin Panel Validation', () => {
         galleryId = body._id; // Save the ID for cleanup
         
         
-        // Navigate to dashboard via UI
-        await dashboardPage.goto();
+        // Login via UI
+        await loginApp.goto();
+        await loginApp.login(process.env.ADMIN_USER!, process.env.ADMIN_PASS!);
         await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 10000 });
-
-        if (!await page.getByText(uniqueGalleryName).isVisible()) {
-            console.log('[Test Run] Not logged in, performing UI login...');
-            await loginPage.goto();
-            await loginPage.login(process.env.ADMIN_USER!, process.env.ADMIN_PASS!);
-            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 10000 });
-        }
+            
         
         console.log('[Test Run] Verifying gallery is visible in UI...');
         // Assertion: Find the gallery we created on the main admin page
-        const galleryCard = page.locator('div.card', { hasText: uniqueGalleryName });
+        const galleryCard = page.locator('h3', { hasText: uniqueGalleryName });
+        const clientText = page.locator(`div:has([id*="clientName-"])`);
         await expect(galleryCard).toBeVisible();
-        await expect(galleryCard).toContainText(galleryPayload.clientName);
+        await expect(galleryCard).toContainText(galleryPayload.title);
+        await expect(clientText).toContainText(galleryPayload.clientName);
+
 
 
         // --- 3. TEARDOWN (via API) ---

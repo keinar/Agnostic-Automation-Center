@@ -1,7 +1,7 @@
 import { BasePage } from './basePage';
 import { type Page, type Locator } from '@playwright/test';
 
-export class LoginPage extends BasePage {
+export class LoginApp extends BasePage {
     readonly emailInput: Locator;
     readonly passwordInput: Locator;
     readonly loginButton: Locator;
