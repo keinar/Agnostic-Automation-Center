@@ -309,6 +309,7 @@ export function RunSettingsTab() {
                             </label>
                             <input
                                 id="rs-docker-image"
+                                data-testid="run-settings-docker-image"
                                 type="text"
                                 value={settings.dockerImage}
                                 onChange={(e) => setSettings(prev => ({ ...prev, dockerImage: e.target.value }))}
@@ -324,6 +325,7 @@ export function RunSettingsTab() {
                             </label>
                             <input
                                 id="rs-dev-url"
+                                data-testid="run-settings-dev-url"
                                 type="text"
                                 value={settings.targetUrls.dev}
                                 onChange={(e) => setSettings(prev => ({
@@ -388,6 +390,7 @@ export function RunSettingsTab() {
 
                         {/* Save button */}
                         <button
+                            data-testid="run-settings-submit"
                             onClick={handleSave}
                             disabled={saving}
                             className="px-5 py-2.5 text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 rounded-lg transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"

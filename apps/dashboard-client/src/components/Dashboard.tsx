@@ -255,6 +255,7 @@ export const Dashboard = () => {
 
         <div className="flex flex-col items-end gap-2">
           <button
+            data-testid="dashboard-run-button"
             onClick={() => setIsModalOpen(true)}
             disabled={!canRunTest}
             title={isViewer ? 'Viewers cannot run tests' : (!hasTestImage ? 'Please configure your Docker test image in the Settings page before running tests.' : 'Run a new test')}

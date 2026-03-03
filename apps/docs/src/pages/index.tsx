@@ -176,7 +176,7 @@ function FeatureShowcase(): ReactNode {
                 <li>🖼️ <strong>Visual artifact gallery</strong> — screenshots, traces, and videos at a glance</li>
                 <li>🤖 <strong>AI root-cause analysis</strong> — Gemini surfaces the fix, not just the failure</li>
               </ul>
-              <Link className="button button--primary" to="/docs/features/investigation-hub">
+              <Link className="button button--primary" to="/docs/features/user-guide">
                 Explore the Hub →
               </Link>
             </div>
@@ -217,7 +217,7 @@ function FeatureShowcase(): ReactNode {
                 <li>▶️ <strong>Interactive player</strong> — step-by-step manual execution with pass/fail controls</li>
                 <li>📊 <strong>Live progress tracking</strong> — watch the cycle complete in real time</li>
               </ul>
-              <Link className="button button--primary" to="/docs/features/test-cycles">
+              <Link className="button button--primary" to="/docs/testing/strategy">
                 Learn About Cycles →
               </Link>
             </div>

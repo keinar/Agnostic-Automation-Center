@@ -3,7 +3,7 @@ import { NavLink, Link, useLocation, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Settings, BookOpen, X, ChevronLeft, ChevronRight, Info, ClipboardList, Layers,
   User, Building, Users, CreditCard, Shield, Activity, Play, Database, Link as LinkIcon,
-  Clock, Sparkles, ArrowLeft,
+  Clock, Sparkles, ArrowLeft, Rocket,
 } from 'lucide-react';
 import logoLight from '../assets/logo.png';
 import logoDark from '../assets/logo-dark.png';
@@ -212,7 +212,30 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Version footer ────────────────────────────────────────────────────────
   const versionFooter = (
-    <div data-testid="sidebar-version-footer" className="px-3 py-3 border-t border-slate-300 dark:border-gh-border-dark flex items-center justify-center">
+    <div data-testid="sidebar-version-footer" className="px-3 py-3 border-t border-slate-300 dark:border-gh-border-dark flex flex-col items-center gap-2">
+      {/* Getting Started recovery button */}
+      {isCollapsed ? (
+        <button
+          data-testid="sidebar-getting-started-button"
+          onClick={() => window.dispatchEvent(new CustomEvent('agnox:open-onboarding'))}
+          title="Getting Started"
+          aria-label="Open getting started guide"
+          className="flex items-center justify-center text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer"
+        >
+          <Rocket size={14} />
+        </button>
+      ) : (
+        <button
+          data-testid="sidebar-getting-started-button"
+          onClick={() => window.dispatchEvent(new CustomEvent('agnox:open-onboarding'))}
+          aria-label="Open getting started guide"
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors cursor-pointer"
+        >
+          <Rocket size={13} className="flex-shrink-0" />
+          {labelSpan('Getting Started')}
+        </button>
+      )}
+      {/* Changelog / version */}
       {isCollapsed ? (
         <button
           data-testid="sidebar-changelog-button"
@@ -382,7 +405,16 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
         {mobileSlidingNav}
 
-        <div data-testid="sidebar-mobile-version-footer" className="px-4 py-3 border-t border-slate-300 dark:border-gh-border-dark">
+        <div data-testid="sidebar-mobile-version-footer" className="px-4 py-3 border-t border-slate-300 dark:border-gh-border-dark flex flex-col gap-2">
+          <button
+            data-testid="sidebar-mobile-getting-started-button"
+            onClick={() => { onMobileClose(); window.dispatchEvent(new CustomEvent('agnox:open-onboarding')); }}
+            aria-label="Open getting started guide"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors cursor-pointer"
+          >
+            <Rocket size={13} className="flex-shrink-0" />
+            <span>Getting Started</span>
+          </button>
           <button
             data-testid="sidebar-mobile-changelog-button"
             onClick={() => { onMobileClose(); setShowChangelog(true); }}

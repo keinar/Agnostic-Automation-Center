@@ -308,6 +308,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                         </button>
                         <button
                             type="button"
+                            data-testid="modal-schedule-tab"
                             onClick={() => { setRunMode('schedule'); setScheduleStatus(null); }}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 border-l border-slate-200 dark:border-gh-border-dark transition-colors cursor-pointer ${runMode === 'schedule'
                                 ? 'bg-amber-500 dark:bg-amber-600 text-white'
@@ -361,7 +362,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                         </div>
 
                         {/* Environment */}
-                        <div className="flex flex-col gap-1.5">
+                        <div data-testid="modal-environment-select" className="flex flex-col gap-1.5">
                             <label
                                 htmlFor="modal-env"
                                 className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
@@ -625,6 +626,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                         {runMode === 'immediate' ? (
                             <button
                                 type="submit"
+                                data-testid="modal-launch-button"
                                 className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 transition-colors cursor-pointer shadow-sm"
                             >
                                 <Play size={16} />

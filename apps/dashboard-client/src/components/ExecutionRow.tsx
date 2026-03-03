@@ -236,6 +236,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     return (
         <>
             <tr
+                data-execution-id={execution.taskId}
                 tabIndex={0}
                 onClick={handleRowClick}
                 onKeyDown={handleRowKeyDown}

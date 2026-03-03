@@ -302,7 +302,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
     return (
         <>
-            <div className="bg-white dark:bg-gh-bg-subtle-dark border border-slate-200 dark:border-gh-border-dark rounded-xl shadow-sm px-4 py-3 mb-4">
+            <div data-testid="filter-bar" className="bg-white dark:bg-gh-bg-subtle-dark border border-slate-200 dark:border-gh-border-dark rounded-xl shadow-sm px-4 py-3 mb-4">
 
                 {/* ── Desktop: inline filter row (hidden on mobile) ── */}
                 <div className="hidden md:flex flex-wrap items-center gap-x-5 gap-y-2.5">

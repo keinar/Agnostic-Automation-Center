@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { useAuth } from '../context/AuthContext';
+import { OnboardingWidget } from './onboarding/OnboardingWidget';
 
 export function AppLayout() {
   const { user, logout } = useAuth();
@@ -45,6 +46,8 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      <OnboardingWidget />
     </div>
   );
 }

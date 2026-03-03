@@ -4,6 +4,9 @@ import { Loader2, CheckCircle2, XCircle, ExternalLink, KeyRound, Globe, Mail, We
 import { useAuth } from '../../context/AuthContext';
 import { Github, Gitlab as GitlabIcon } from 'lucide-react'; // Using Gitlab from lucide-react if available, else another icon
 // Note: lucide-react might not have azure, we will use a generic icon or custom SVG for Azure.
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
+import { useSearchParams } from 'react-router-dom';
 
 interface IJiraConfig {
     domain: string;
@@ -33,6 +36,51 @@ const INPUT_CLASS =
 
 export function IntegrationsTab() {
     const { user, token } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Fix #5 — detect tour=connectors param and trigger a 1-step driver.js popover
+    // pointing at the Slack webhook card. Strip the param afterward so it doesn't
+    // re-fire on refresh.
+    React.useEffect(() => {
+        if (searchParams.get('tour') !== 'connectors') return;
+
+        // Remove the param from the URL immediately (replace so Back doesn't re-trigger)
+        const next = new URLSearchParams(searchParams);
+        next.delete('tour');
+        setSearchParams(next, { replace: true });
+
+        // Give the tab a moment to fully paint before the popover fires
+        const timerId = setTimeout(() => {
+            let connectorsTour: ReturnType<typeof driver>;
+            connectorsTour = driver({
+                animate: true,
+                overlayColor: 'rgba(15, 23, 42, 0.7)',
+                stagePadding: 8,
+                stageRadius: 8,
+                popoverClass: 'agnox-tour-popover',
+                doneBtnText: 'Got it',
+                onDestroyStarted: () => {
+                    connectorsTour.destroy();
+                },
+                steps: [
+                    {
+                        element: '[data-testid="integrations-slack-card"]',
+                        popover: {
+                            title: 'Add Your Webhooks',
+                            description:
+                                'Add your Slack webhook URL here to get real-time alerts whenever a test run fails or becomes unstable. Connect Jira above to auto-create tickets from failures.',
+                            side: 'top',
+                            align: 'start',
+                        },
+                    },
+                ],
+            });
+            connectorsTour.drive();
+        }, 400);
+
+        return () => clearTimeout(timerId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // run once on mount — navigate already stripped the param
 
     // ── Jira state ────────────────────────────────────────────────────────────
     const [form, setForm] = React.useState<IFormState>({ domain: '', email: '', apiToken: '' });
@@ -429,7 +477,7 @@ export function IntegrationsTab() {
             </div>
 
             {/* ── Slack Card ────────────────────────────────────────────────── */}
-            <div className="mt-6 rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm overflow-hidden">
+            <div data-testid="integrations-slack-card" className="mt-6 rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm overflow-hidden">
                 {/* Card header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-gh-border-dark">
                     <div className="flex items-center gap-3">
