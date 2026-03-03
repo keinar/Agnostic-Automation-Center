@@ -124,6 +124,15 @@ graph TB
 - `/api/ingest/teardown` - Finalize reporter session and persist execution record
 - `/api/metrics/:image` - Performance insights
 - `/reports/*` - Static HTML test reports
+- `/api/organization/ai-config` - GET/PATCH AI model config and BYOK keys (admin only for PATCH)
+- `/api/ai/generate-bug-report` - Feature A: Auto-generate structured bug report from execution logs
+- `/api/ai/analyze-stability` - Feature B: Flakiness analysis for a test group (persists to `stability_reports`)
+- `/api/ai/stability-reports` - Feature B: History of stability reports for org
+- `/api/ai/optimize-test-cases` - Feature C: Dual-agent BDD optimization for up to 20 test cases
+- `/api/webhooks/ci/pr` - Feature D: Smart PR routing webhook (maps changed files → test folder)
+- `/api/ai/chat` - Feature E: Two-turn quality chatbot (NL → MongoDB pipeline → answer + optional chart)
+- `/api/ai/chat/history` - Feature E: List chat sessions for org
+- `/api/ai/chat/:conversationId` - Feature E: Full message history for a conversation
 
 ---
 
@@ -172,6 +181,44 @@ graph TB
 
 ---
 
+### Dual-Agent (Actor-Critic) AI Architecture
+
+The Worker's root cause analysis feature — as well as the Producer's Test Optimizer (`POST /api/ai/optimize-test-cases`) — use a **two-pass Actor-Critic pipeline** implemented directly in `analysisService.ts` and the AI routes. This pattern prevents LLM hallucinations by having a second, deterministic model validate every claim before it reaches the end user.
+
+```
+Input: raw logs (up to 60,000 chars)
+          │
+          ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 1 — Analyzer (Actor)                              │
+│  Model:       gemini-2.5-flash                          │
+│  Temperature: 0.4  (creative, generates suggestions)    │
+│  Schema:      responseSchema enforced JSON output       │
+│               { rootCause: string, suggestedFix: string }│
+│  System:      "Expert QA Automation Investigator"       │
+└─────────────────────┬───────────────────────────────────┘
+                      │ structured JSON
+                      ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 2 — Critic (Evaluator)                            │
+│  Model:       gemini-2.5-flash                          │
+│  Temperature: 0.0  (deterministic, no creativity)        │
+│  Input:       raw logs + Analyzer JSON output            │
+│  Task:        validate every claim; override             │
+│               hallucinated or unsupported suggestions    │
+│  Output:      final developer-facing Markdown           │
+│               (### 🚨 Root Cause / ### 🛠️ Suggested Fix) │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Design decisions:**
+- The Analyzer uses `responseMimeType: "application/json"` and a `responseSchema` to guarantee structured output — the Critic receives clean data, not free-form text.
+- The Critic runs at temperature 0.0 to be fully deterministic. Its system instruction explicitly prohibits mentioning any "review process" or "draft" — the output reads as a single authoritative answer.
+- Log slicing: `logs.slice(-60000)` is applied before both passes so both models see exactly the same evidence window.
+- If the Analyzer fails to produce valid JSON, a safe fallback object is created and passed to the Critic, which still produces a useful (if generic) output.
+
+---
+
 ### MongoDB
 **Purpose:** Primary data store for multi-tenant data
 
@@ -189,6 +236,8 @@ graph TB
 - `test_cases` - Manual and automated test case definitions (Sprint 9): steps array, suite grouping, AI-generated content
 - `test_cycles` - Hybrid test cycles (Sprint 9): items array with status tracking, summary stats, cycle-level status
 - `projectEnvVars` - Per-project environment variables; `isSecret=true` values stored as AES-256-GCM encrypted payloads
+- `stability_reports` - Flakiness analysis results per group: score (0-100), verdict, findings, recommendations, passRate. Tenant-isolated.
+- `chat_sessions` - Multi-turn AI chat conversations: messages array, conversationId (UUID), 24h TTL. Tenant-isolated.
 
 **Indexes:**
 - `organizationId` - All collections (multi-tenant filtering)
@@ -516,7 +565,7 @@ services:
 | **Cache** | Redis | Rate limiting, sessions |
 | **Queue** | RabbitMQ | Task distribution |
 | **Container** | Docker SDK | Test execution isolation |
-| **AI** | Google Gemini API | Root cause analysis |
+| **AI** | Google Gemini / OpenAI / Anthropic | Multi-provider LLM: root cause analysis, bug gen, test optimization, chatbot. BYOK supported via `resolveLlmConfig()` |
 | **Email** | SendGrid (`@sendgrid/mail`) | Invitation emails, transactional notifications |
 | **Auth** | JWT (jsonwebtoken) | HS256 stateless authentication + Redis Blacklist |
 | **Password** | bcrypt | Secure password hashing |

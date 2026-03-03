@@ -28,6 +28,22 @@ Complete walkthrough of the Agnox platform features.
 
 The dashboard supports a **Light** and **Dark** theme. Use the theme toggle icon in the top-right of the header to switch between modes. Your preference is persisted in `localStorage` and applied automatically on every subsequent visit.
 
+### Getting Started Checklist
+
+New users see a floating **Getting Started** widget in the bottom-right corner of the dashboard. It contains a 3-item interactive checklist that guides you through the core Agnox workflow:
+
+| # | Item | Action |
+|---|------|--------|
+| 1 | **Connect Docker Image** | Launches an 11-step guided tour through Run Settings → first test execution → Investigation Hub |
+| 2 | **Run Your First Test** | Resumes the same guided tour at the execution step |
+| 3 | **Explore Platform Features** | Launches a 5-step platform discovery tour spotlighting Test Cases, Test Cycles, Team Members, and Env Variables |
+
+- Click **Start** on any item to begin its guided tour. Driver.js highlights each relevant UI element with a spotlight overlay and step-by-step instructions.
+- Completed items show a **Replay** badge and remain clickable — you can revisit any tour at any time.
+- Click **×** on the widget header to dismiss it. You can reopen it at any time from the **Getting Started** button (rocket icon) at the bottom of the sidebar.
+
+> **Tip:** The guided tour uses `allowClose: false` — use the **Next** / **Done** buttons to advance rather than clicking outside the spotlight.
+
 ### Changelog
 
 The current application version is shown at the bottom of the sidebar. Click the version number (e.g., `v3.1.0`) to open the **Changelog** modal, which summarises the features and fixes shipped in recent sprints.
@@ -355,6 +371,198 @@ Use the **Source** filter on the Dashboard to distinguish:
 
 - All reporter errors are caught and suppressed. If the Agnox API is unreachable, the reporter is a silent no-op — your test suite is never affected.
 - Events are batched (default: 2 s flush interval, 50 events per batch) to minimize HTTP overhead.
+
+---
+
+## 15. AI Quality Orchestrator
+
+The AI Quality Orchestrator is a suite of five AI-powered features that help your team find bugs faster, detect flaky tests, optimize test cases, automate PR routing, and query your test data in natural language.
+
+> **Enabling AI Features:** All AI features default to **off** (opt-in model). Enable them individually in **Settings → Features** under the "AI Features" section. Configure your preferred AI model and optional Bring-Your-Own-Key (BYOK) API keys in **Settings → Security**.
+
+---
+
+### Configuring AI — BYOK (Settings → Security)
+
+Agnox ships with platform-managed LLM keys as a convenience. To use your own cloud account keys (zero extra cost to your Agnox plan), configure **Bring Your Own Key (BYOK)**:
+
+1. Go to **Settings → Security** and scroll to the **AI Configuration** section.
+2. Under **Default AI Model**, select the model all AI features will use by default:
+   - `gemini-2.5-flash` *(default — fastest, best for most workloads)*
+   - `gpt-4o`
+   - `claude-3-5-sonnet`
+3. For each provider you want to supply your own key for, locate its row in the **Bring Your Own Key** table:
+   - Status shows **"Using Platform Default"** (grey) until a key is provided, or **"Configured"** (green) when your key is active.
+   - Paste your API key into the masked input field and click **Save Key**.
+   - To rotate or remove a key, click **Remove** — the platform fallback key is used immediately.
+4. Click **Save Settings**.
+
+> **Security:** Keys are encrypted at rest using **AES-256-GCM** before being persisted in MongoDB. Plaintext keys are never stored, logged, or returned by any API response. The `resolveLlmConfig()` utility on the server is the **only** code path that decrypts a BYOK key, and only at the moment of an LLM call.
+
+| Setting | Options | Description |
+|---------|---------|-------------|
+| **Default AI Model** | `gemini-2.5-flash`, `gpt-4o`, `claude-3-5-sonnet` | Applied to all AI features unless overridden |
+| **BYOK — Gemini** | Optional | Your Google AI Studio or Vertex AI key |
+| **BYOK — OpenAI** | Optional | Your OpenAI platform key |
+| **BYOK — Anthropic** | Optional | Your Anthropic Console key |
+
+---
+
+### A. Auto-Bug Generator
+
+Automatically generate a structured Jira-ready bug report from a failed execution's logs.
+
+**How it works:**
+1. Open any **FAILED** or **ERROR** execution in the Investigation Hub drawer.
+2. Click **Auto Bug** (Sparkles icon) at the top of the drawer.
+3. The system fetches the execution's full log output from MongoDB. If the output exceeds 80,000 characters, it is smart-truncated: the **first 10%** (container start-up context) and **last 90%** (where errors concentrate) are retained, with a `[LOG TRUNCATED]` marker inserted so you always see where the crop occurred.
+4. The AI analyses the truncated log and generates a structured report containing:
+   - **Title** — concise bug title
+   - **Steps to Reproduce** — ordered list
+   - **Expected Behavior** and **Actual Behavior**
+   - **Severity** — `critical` / `high` / `medium` / `low`
+   - **Code Patches** — file path + suggested fix snippet (where detectable)
+5. Review and edit any field in the **Auto Bug** modal before submitting.
+6. Click **Submit to Jira** to pre-fill the Jira ticket creation modal with the finalized content.
+
+> **Requires:** `autoBugGeneration` feature flag enabled in **Settings → Features**.
+
+---
+
+### B. Flakiness Detective (Stability Page)
+
+Analyze a test group's execution history to detect flaky tests and receive actionable recommendations.
+
+1. Navigate to **Stability** in the sidebar (visible when `flakinessDetective` is enabled).
+2. Select a **group name** from the dropdown.
+3. Click **Analyze Stability**.
+4. Review the results:
+   - **Flakiness Score** (0–100 gauge) — higher = more flaky
+   - **Verdict badge**: Stable / Mildly Flaky / Flaky / Highly Unstable
+   - **Findings** — specific patterns observed in the execution history (e.g., intermittent timeouts, environment-specific failures)
+   - **Recommendations** — actionable steps to improve stability
+5. Past analyses are listed in the history panel. Click any row to reload it without a new LLM call.
+
+> **Note:** The analysis fetches the last 20 executions for the selected group. Only `status`, `error`, and `output` fields are projected to keep the DB payload small.
+
+> **Requires:** `flakinessDetective` feature flag enabled.
+
+---
+
+### C. Smart Test Optimizer
+
+Convert selected test cases into clean, standardized **BDD (Behavior-Driven Development)** steps — with duplicate detection, edge-case suggestions, and a Dual-Agent validation pass to ensure quality.
+
+**BDD Conversion Flow:**
+1. Navigate to **Test Cases**.
+2. Select one or more test cases using the checkboxes (up to **20 per batch**).
+3. Click **Optimize with AI** in the floating Bulk Actions bar.
+4. The optimizer runs a two-pass pipeline:
+   - **Pass 1 — Analyzer (temperature 0.4):** Reads each test case's existing steps and rewrites them in `Given / When / Then` BDD format, identifies exact duplicate step text across cases, and proposes additional edge-case scenarios.
+   - **Pass 2 — Critic (temperature 0.0):** Reviews each Analyzer output against the original steps. Overrides any suggestion that is not grounded in the original intent. Eliminates hallucinated steps.
+5. The result is presented in the **Optimized Test Cases** modal as a side-by-side diff:
+   - **Left pane:** Original steps
+   - **Right pane:** Proposed BDD steps with rationale annotations
+   - **Edge Cases panel:** New scenarios recommended by the Analyzer
+6. Accept or reject per case:
+   - Click **Apply Optimization** to save a single case's changes via `PUT /api/test-cases/:id`.
+   - Click **Apply All** to save all approved optimizations in one action.
+
+> **Requires:** `testOptimizer` feature flag enabled.
+
+---
+
+### D. Smart PR Routing
+
+Automatically trigger targeted test runs when code changes are pushed to your repository, routing only the relevant test folder based on the changed files.
+
+**Webhook Setup (GitHub):**
+1. Go to **Settings → Run Settings** and enable the **Smart PR Routing** toggle.
+2. Copy the **Webhook URL** displayed in the callout (format: `https://api.agnox.dev/api/webhooks/ci/pr?token=<orgId>`).
+3. In your **GitHub** repository, go to **Settings → Webhooks → Add webhook**:
+   - **Payload URL:** paste the copied URL
+   - **Content type:** `application/json`
+   - **Events:** select **Just the push event**
+   - Click **Add webhook**.
+
+**Webhook Setup (GitLab):**
+1. In your **GitLab** project, go to **Settings → Webhooks**.
+2. Paste the Webhook URL in the **URL** field.
+3. Under **Trigger**, check **Push events**.
+4. Click **Add webhook**.
+
+**How it works:**
+- When a push is detected, the webhook payload's `commits[].modified` / `added` / `removed` lists are extracted.
+- The AI maps the changed file paths to the most appropriate test folder in your project configuration.
+- A test execution is automatically dispatched to RabbitMQ using your project's Run Settings.
+- The webhook response includes `{ taskId, targetFolder, reasoning, dispatchedAt }` — the `reasoning` field explains why that folder was selected.
+
+> **Requires:** `prRouting` feature flag enabled.
+
+---
+
+### E. Quality Chatbot (Ask AI)
+
+Ask natural-language questions about your test data and receive instant answers with optional inline charts — no SQL or query language required.
+
+**Using the Chatbot:**
+1. Navigate to **Ask AI** in the sidebar (visible when `qualityChatbot` is enabled).
+2. Type a question in the input field. Example queries:
+   - *"How many tests failed last week?"*
+   - *"What's the pass rate for the checkout group?"*
+   - *"Which test images have the highest failure count this month?"*
+   - *"Show me a breakdown of test results by environment for February 2026."*
+3. The AI translates your question into a MongoDB aggregation pipeline and executes it securely against your organization's data.
+4. The summarized answer appears as an assistant message.
+5. When the response includes numeric comparisons or grouped counts, a **bar chart** is rendered inline below the answer.
+6. Previous conversations appear in the **left panel** — click any session to continue a prior chat. Conversations are stored for **24 hours** and then automatically purged.
+
+**Supported Chart Types:**
+- **Bar chart** — for ranked or grouped comparisons (e.g., failures by image)
+- **Line chart** — for time-series data (e.g., daily pass rate over 30 days)
+- **Pie chart** — for distribution breakdowns (e.g., status proportions)
+
+**Security model:** Every LLM-generated pipeline is sanitized through a mandatory **5-layer guard** before execution:
+
+| Layer | What it does |
+|-------|--------------|
+| 1. Stage allowlist | Rejects any pipeline stage not in the approved set (`$match`, `$group`, `$project`, `$sort`, `$limit`, `$count`, `$addFields`, `$unwind`, etc.) — `$out`, `$merge`, `$function`, `$where` are always blocked |
+| 2. Force `organizationId` | Overwrites (not merges) the `organizationId` field in the first `$match` stage with the authenticated user's org ID — LLM output cannot read another org's data |
+| 3. `$limit` cap | Appends `{ $limit: 500 }` if absent; clamps any `$limit` above 1000 to 1000 |
+| 4. Collection whitelist | Only allows queries against `executions` and `test_cycles` — no access to `users`, `organizations`, or other collections |
+| 5. Operator scan | Recursively scans all values for `$`-prefixed strings in field-name positions that are not in the operator allowlist |
+
+> **Requires:** `qualityChatbot` feature flag enabled.
+
+---
+
+### Dual-Agent (Actor-Critic) Architecture
+
+Several AI features — including **Root Cause Analysis**, **Test Case Optimizer**, and **Auto-Bug Generator** — use a **Dual-Agent pipeline** to deliver high-quality, hallucination-resistant output:
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  STEP 1: Analyzer (Actor)                                        │
+│  Model: gemini-2.5-flash  •  Temperature: 0.4                    │
+│  Output: Structured JSON { rootCause, suggestedFix }             │
+│          (or BDD steps, bug report, depending on feature)        │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │ structured output
+                            ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  STEP 2: Critic (Evaluator)                                      │
+│  Model: gemini-2.5-flash  •  Temperature: 0.0  (deterministic)   │
+│  Input: Raw logs + Analyzer output                               │
+│  Task: Validate every claim against source evidence.             │
+│        Override hallucinated or unsupported suggestions.         │
+│  Output: Final developer-facing Markdown                         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Why two passes?**
+- The Analyzer (temperature 0.4) generates creative, detailed suggestions but can occasionally hallucinate file names or APIs not present in the logs.
+- The Critic (temperature 0.0, fully deterministic) cross-checks every claim against the raw evidence. Any suggestion not grounded in the provided logs is overridden before the output reaches the user.
+- This pattern prevents the most common failure mode of single-pass LLM analysis: confident but wrong answers.
 
 ---
 

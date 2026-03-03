@@ -3,6 +3,73 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.11.0] — 2026-03-03
+
+### Changed
+- `docs/features/user-guide.md` — Section 15 (AI Quality Orchestrator) significantly expanded with richer, step-by-step guidance for all five AI features:
+  - **BYOK Configuration:** New step-by-step setup guide (Settings → Security → AI Configuration) documenting model selection, per-provider key input, status badges (Configured / Using Platform Default), Remove flow, and the AES-256-GCM encryption guarantee.
+  - **Auto-Bug Generator:** Detailed log-truncation strategy (first 10% + last 90%, max 80k chars, `[LOG TRUNCATED]` marker), full field breakdown of the generated report (`title`, `stepsToReproduce`, `expectedBehavior`, `actualBehavior`, `severity`, `codePatches`).
+  - **Smart Test Optimizer:** Renamed section to match product name; documented the BDD conversion flow step by step (`Given / When / Then`), described Pass 1 (Analyzer, temp 0.4) and Pass 2 (Critic, temp 0.0) separately, and clarified the side-by-side diff modal UX including the Edge Cases panel.
+  - **Smart PR Routing:** Added GitLab webhook setup instructions (Settings → Webhooks → Push events) alongside the existing GitHub steps; added format note for the webhook URL (`?token=<orgId>`); clarified that `reasoning` in the response explains the folder-selection rationale.
+  - **Quality Chatbot:** Added supported chart types table (bar / line / pie); replaced prose security note with a 5-column guard table documenting each layer (stage allowlist, `organizationId` injection, `$limit` cap, collection whitelist, operator scan); added conversation 24h TTL note.
+  - **Dual-Agent (Actor-Critic) Architecture:** New dedicated subsection with ASCII pipeline diagram, temperature settings, schema enforcement details, and explanation of why a two-pass validation prevents confident-but-wrong outputs.
+- `docs/architecture/overview.md` — Two updates:
+  - **New "Dual-Agent (Actor-Critic) AI Architecture" subsection** added after the Worker Service section, showing the full pipeline (`logs.slice(-60000)` → Analyzer at temp 0.4 with `responseSchema` → Critic at temp 0.0 with override authority → final Markdown) along with design decisions (JSON schema enforcement, fallback object on JSON parse failure).
+  - **Technology Stack Summary table — AI row** updated from "Google Gemini API / Root cause analysis" to reflect multi-provider BYOK support (Gemini, OpenAI, Anthropic) and the `resolveLlmConfig()` resolver.
+- `package.json` — Version bumped from `3.10.0` to `3.11.0`.
+
+## [3.10.0] — 2026-03-03
+
+### Added
+- **AI Orchestrator — Phase 1 (Foundation)**: New `IAiConfig` and `IAiFeatureFlags` shared-types interfaces; `IOrganization` extended with `aiConfig` and `aiFeatures`. Migration 009 (`migrations/009-add-ai-orchestrator.ts`) backfills granular AI feature flags and `aiConfig.defaultModel` for all existing orgs.
+- **AI Orchestrator — `resolveLlmConfig()` utility** (`apps/producer-service/src/utils/llm-config.ts`): Single-source-of-truth BYOK resolver — reads org's `defaultModel` and encrypted per-provider keys, decrypts via `encryption.ts`, and falls back to `PLATFORM_GEMINI_API_KEY` / `PLATFORM_OPENAI_API_KEY` / `PLATFORM_ANTHROPIC_API_KEY`. Throws `LlmNotConfiguredError` (→ 503) when no key is available.
+- **AI Orchestrator — BYOK & AI Config API** (`GET/PATCH /api/organization/ai-config`): Admins can select the org's default AI model (`gemini-2.5-flash`, `gpt-4o`, `claude-3-5-sonnet`) and store per-provider API keys encrypted at rest; response returns only `byokConfigured` flags, never plaintext keys.
+- **AI Orchestrator — Granular Feature Flags** (`PATCH /api/organization/features` extended): `aiFeatures` block now accepted alongside existing module flags: `rootCauseAnalysis`, `autoBugGeneration`, `flakinessDetective`, `testOptimizer`, `prRouting`, `qualityChatbot`.
+- **Feature A — Auto-Bug Generator** (`POST /api/ai/generate-bug-report`): Fetches execution logs, applies first-10% + last-90% truncation at 80k chars, and generates a structured bug report (`title`, `stepsToReproduce`, `expectedBehavior`, `actualBehavior`, `codePatches`, `severity`). Guarded by `autoBugGeneration` feature flag.
+- **`AutoBugModal.tsx`**: Edit-before-submit form pre-populated with AI-generated bug report fields; "Submit to Jira" button opens `CreateJiraTicketModal` with `initialSummary` / `initialDescription` pre-filled.
+- **`ExecutionDrawer.tsx`** — "Auto Bug" button (Sparkles icon) added for `FAILED`/`ERROR` executions when `autoBugGeneration` is enabled.
+- **Feature B — Flakiness Detective** (`POST /api/ai/analyze-stability`): Fetches last 20 executions for a group, calculates flakiness score (0–100), and returns structured `findings[]` and `recommendations[]`. Results persisted in new `stability_reports` collection (Migration 010). Guarded by `flakinessDetective` flag.
+- **`GET /api/ai/stability-reports`**: Returns last 50 stability reports for the org (no feature-flag guard — history always readable).
+- **`StabilityPage.tsx`** (route: `/stability`): Group selector → "Analyze Stability" → flakiness gauge + verdict badge + findings/recommendations + clickable history list (loads past reports without a new LLM call).
+- **Feature C — Test Case Optimizer** (`POST /api/ai/optimize-test-cases`): Dual-agent pipeline (Analyzer → Critic) accepts up to 20 test-case IDs and returns optimized BDD steps, detected duplicates, and edge cases per case. Guarded by `testOptimizer` flag.
+- **`OptimizedTestCasesModal.tsx`**: Side-by-side diff view (original vs. optimized steps) with per-case "Apply Optimization" and "Apply All" actions that call `PUT /api/test-cases/:id`.
+- **`BulkActionsBar.tsx`** extended with optional `onOptimize` / `showOptimize` props; "Optimize with AI" button appears when test cases are selected and `testOptimizer` is enabled.
+- **Feature D — Smart PR Routing** (`POST /api/webhooks/ci/pr?token=<orgId>`): Receives GitHub push webhooks, extracts changed files, maps them to a `targetFolder` via LLM, dispatches a RabbitMQ task using `computeOrgPriority()`, and returns `{ taskId, targetFolder, reasoning, dispatchedAt }`. Guarded by `prRouting` flag. Route file: `apps/producer-service/src/routes/pr-routing.ts`.
+- **`RunSettingsTab.tsx`** — PR Routing toggle + webhook URL callout added; uses `useOrganizationFeatures`.
+- **Feature E — Quality Chatbot** (`POST /api/ai/chat`): Two-turn LLM pipeline — Step 1 translates natural-language question into `{ collection, pipeline }`, Step 2 summarises DB results as `{ answer, chartData? }`. Pipeline sanitized by `sanitizePipeline()` in `utils/chat-sanitizer.ts` (5-layer NoSQL injection guard: stage allowlist, force `organizationId`, `$limit` cap, collection whitelist, operator scan). Conversation history stored in `chat_sessions` collection (24h TTL). Guarded by `qualityChatbot` flag.
+- **`GET /api/ai/chat/history`** and **`GET /api/ai/chat/:conversationId`**: History endpoints (no feature-flag guard — always readable).
+- **`ChatPage.tsx`** (route: `/chat`): Two-panel layout (left: session history sidebar, right: chat); CSS bar chart rendered when `chartData` is returned; suggested-question chips; history refreshed after first turn of a new conversation.
+- **`SecurityTab.tsx`** — Full BYOK UI: default AI model dropdown, per-provider key management rows (Configured / Using Platform Default badges, masked key input, Remove button). Replaces legacy single `aiAnalysisEnabled` toggle.
+- **`FeaturesTab.tsx`** — New "AI Features" section with 6 toggle rows (Root Cause Analysis, Auto-Bug Generation, Flakiness Detective, Test Optimizer, Smart PR Routing, Quality Chatbot); opt-in model (all default `false`).
+- **`Sidebar.tsx`** — "Stability" (Activity icon) and "Ask AI" (MessageSquare icon) nav items conditionally rendered via `aiFeatures` flags.
+- **`App.tsx`** — `/stability` and `/chat` routes added as `FeatureGatedRoute` entries with `aiFeatureKey` prop.
+- **Migration 010** (`migrations/010-add-stability-reports.ts`): Creates `stability_reports` collection with indexes on `organizationId + createdAt` and `organizationId + groupName`.
+- **New MongoDB collections**: `stability_reports` (flakiness analysis history, tenant-isolated) and `chat_sessions` (multi-turn AI chat context, 24h TTL, tenant-isolated).
+- **New env vars** (optional): `PLATFORM_OPENAI_API_KEY`, `PLATFORM_ANTHROPIC_API_KEY` — platform-default fallback keys for the respective providers.
+
+### Changed
+- `packages/shared-types/index.ts` — Added `IAiConfig`, `IAiFeatureFlags`; `IOrganization` extended with `aiConfig?` and `aiFeatures?`; `openai` and `@anthropic-ai/sdk` SDKs installed in producer.
+- `PROJECT_CONTEXT.md` — Added Phase 19 (AI Orchestrator) to the feature registry; added AI routes, new collections, new components/pages, new utilities; bumped version header to `3.10.0`.
+- `docs/architecture/overview.md` — Added AI Orchestrator routes to Producer Service routes list; added `stability_reports` and `chat_sessions` to MongoDB collections.
+- `docs/features/user-guide.md` — Added Section 15 (AI Quality Orchestrator) with subsections for all five AI features.
+- `package.json` — Version bumped from `3.9.0` to `3.10.0`.
+
+## [3.9.0] — 2026-03-03
+
+### Added
+- **Onboarding Widget** (`apps/dashboard-client/src/components/onboarding/OnboardingWidget.tsx`) — Floating bottom-right checklist widget for new users with three items: "Connect Docker Image", "Run Your First Test", and "Explore Platform Features". Widget state (dismissed, completed items) is persisted in `localStorage` under `aac:onboarding-dismissed` and `aac:onboarding-completed`.
+- **`buildEmptyStateTour`** — 11-step guided driver.js tour walking users through configuring a project in Run Settings, launching their first execution, and viewing results in the Investigation Hub. Uses `MutationObserver` for reliable DOM-based step advancement and `setInterval` URL polling for cross-page navigation detection.
+- **`buildFeatureTour`** — 5-step platform discovery tour highlighting Test Cases, Test Cycles, Settings > Team Members, and Settings > Env Variables by spotlighting sidebar navigation items.
+- **Sidebar "Getting Started" recovery button** — Desktop and mobile sidebar footers gain a `Rocket`-icon button that dispatches `agnox:open-onboarding` custom window event to re-open a previously dismissed onboarding widget without a page reload.
+- **Replay mode** — Completed checklist items remain clickable and render a "Replay" badge, enabling users to revisit any guided tour after completing it.
+- `data-testid` additions in `ExecutionModal.tsx`: `modal-launch-button`, `modal-schedule-tab`, `modal-environment-select` — used as driver.js tour anchors.
+
+### Changed
+- `DRIVER_BASE_CONFIG` — `allowClose: false` applied globally to all driver.js tour instances to prevent accidental tour dismissal.
+- `PROJECT_CONTEXT.md` — Added Phase 18 (Onboarding UX) to the sprint table; added `OnboardingWidget` to the component hierarchy; bumped version header to `3.9.0`.
+- `docs/features/user-guide.md` — Added "Getting Started Checklist" subsection under section 2 (Navigating the Dashboard).
+- `package.json` — Version bumped from `3.8.1` to `3.9.0`.
+
 ## [3.8.1] — 2026-03-01
 
 ### Changed
