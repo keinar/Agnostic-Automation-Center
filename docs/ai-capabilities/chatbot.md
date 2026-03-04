@@ -39,9 +39,27 @@ Ask natural-language questions about your test data and receive instant answers 
 
 ---
 
-## Security Model
+## Security Model & Defense-in-Depth
 
-Every LLM-generated pipeline passes through a mandatory **5-layer guard** before execution:
+The chatbot pipeline is hardened at every stage. User data never reaches the LLM in raw form, and LLM output never reaches the database without sanitization.
+
+### Layer 0 — Shift-Left Data Redaction
+
+Before the user's question and any attached context is sent to the LLM, a pre-processing pass strips sensitive field values:
+
+- Known credential patterns (`password`, `token`, `secret`, `key`, `apiKey`, `authorization`) are replaced with `[REDACTED]` before inclusion in the prompt.
+- This ensures that even if the system prompt or conversation context inadvertently references a sensitive field name, the actual value is never transmitted to the AI provider.
+
+### Layer 0.5 — Prompt Injection Denylist
+
+Every incoming message is scanned against a denylist of known prompt injection patterns before being forwarded to the LLM:
+
+- Phrases designed to override the system prompt (e.g., `ignore previous instructions`, `you are now`, `disregard your instructions`, `act as`, `jailbreak`) are detected and the request is rejected with `400 Bad Request`.
+- The denylist is case-insensitive and covers Unicode lookalike variants.
+
+### Layers 1–5 — Pipeline Sanitizer (`sanitizePipeline()`)
+
+Every LLM-generated MongoDB aggregation pipeline passes through a mandatory **5-layer guard** (`utils/chat-sanitizer.ts`) before execution:
 
 | Layer | What it does |
 |-------|--------------|
@@ -50,6 +68,8 @@ Every LLM-generated pipeline passes through a mandatory **5-layer guard** before
 | **3. `$limit` cap** | Appends `{ $limit: 500 }` if absent; clamps any `$limit` above 1,000 to 1,000. |
 | **4. Collection whitelist** | Only allows queries against `executions` and `test_cycles` — no access to `users`, `organizations`, or other collections. |
 | **5. Operator scan** | Recursively scans all values for `$`-prefixed strings in field-name positions that are not in the operator allowlist. |
+
+A `PipelineSanitizationError` is thrown (→ `400`) on any violation. The sanitized pipeline — never the raw LLM output — is what executes against MongoDB.
 
 ---
 

@@ -149,7 +149,7 @@ function HomepageFeatures(): ReactNode {
         </div>
         <div className="row">
           {FeatureList.map((item) => (
-            <div key={item.title} className={clsx('col col--4')}>
+            <div key={item.title} className={clsx('col col--4')} style={{ marginBottom: '10px' }}>
               <div className={styles.featureCard}>
                 <div className={styles.featureIcon}>{item.icon}</div>
                 <Heading as="h3" className={styles.featureTitle}>{item.title}</Heading>

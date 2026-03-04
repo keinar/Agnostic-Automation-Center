@@ -1,7 +1,7 @@
 ---
 name: doc-sync
 description: Syncs all project documentation to match the current state of the codebase. Run after a major feature or sprint with "Run DocSync" or "Sync Docs" to purge stale content, inject accurate information, bump the project version, and update the changelog.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # DocSync
@@ -18,9 +18,16 @@ Audits and reconciles all core project documentation against the current state o
 1. `PLAN.md` — Source of truth for what was built/completed
 2. `PROJECT_CONTEXT.md` — Architecture, component inventory, feature registry
 3. `README.md` — Public-facing overview, setup, and feature list
-4. `docs/architecture/overview.md` — System design and service topology
-5. `docs/features/user-guide.md` — End-user feature documentation
-6. `CHANGELOG.md` — Versioned record of all releases (created if missing)
+4. **`docs/**/*.md`** — Dynamically scan all Docusaurus documentation files. Core sections:
+   - `docs/getting-started/` — `installation.md`, `intro.md`, `quick-start.md`
+   - `docs/core-features/` — executions, test-cases, test-cycles, scheduling, organization
+   - `docs/ai-capabilities/` — auto-bug, chatbot, configuration, flakiness-detective, pr-routing, test-optimizer
+   - `docs/integrations/` — github-actions, playwright-reporter, docker-setup, slack
+   - `docs/api-reference/` — api-overview, authentication, organizations, users, invitations
+   - `docs/architecture/` — system-overview, infrastructure, deployment, security-architecture, ci-cd
+5. `CHANGELOG.md` — Versioned record of all releases (created if missing)
+
+> **Deprecated paths (removed in v1.2.0):** `docs/architecture/overview.md` and `docs/features/user-guide.md` no longer exist as standalone files — their content has been distributed across the Docusaurus directory tree above.
 
 ## Workflow
 

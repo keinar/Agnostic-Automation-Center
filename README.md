@@ -109,6 +109,9 @@ Built with security best practices from the ground up.
 - **Account Protection:** Login attempt tracking with automatic lockout (15 min after 5 failures)
 - **Security Headers:** OWASP-recommended headers (HSTS preload, CSP-ready, X-Frame-Options)
 - **CORS Protection:** Environment-based origin validation
+- **5-Layer AI Pipeline Sanitizer:** Every LLM-generated MongoDB pipeline passes through a mandatory sanitizer (`chat-sanitizer.ts`) enforcing a stage allowlist, forced `organizationId` injection, `$limit` cap, collection whitelist, and recursive operator scan — preventing NoSQL injection via AI-generated queries
+- **Webhook HMAC Verification:** PR Routing webhooks enforce enterprise-grade `X-Hub-Signature-256` HMAC-SHA256 validation (constant-time comparison) — unsigned or tampered GitHub deliveries are rejected before any processing occurs
+- **Synchronous Startup Guard:** The producer service validates `ENCRYPTION_KEY` (exactly 32 chars), `PLATFORM_JWT_SECRET`, and `PLATFORM_MONGO_URI` at boot — refusing to start if any required secret is missing or malformed
 
 ### Native Playwright Reporter
 
@@ -1010,15 +1013,18 @@ Comprehensive documentation available in `/docs/` and at [docs.agnox.dev](https:
 
 Security is a top priority. The platform includes:
 
-- **92/100 Security Score** (comprehensive audit completed)
+- **100/100 Security Score** (comprehensive audit completed; resolved all SAST Critical/High findings)
 - JWT authentication with bcrypt password hashing (10 rounds)
 - Per-organization rate limiting (prevents noisy neighbor problem)
 - Login attempt tracking (5 failures = 15-minute lockout)
 - OWASP-recommended security headers
 - Multi-tenant data isolation (100% verified, zero cross-org data leaks)
 - CORS protection with environment-based configuration
-- AES-256-GCM encryption for integration secrets
+- AES-256-GCM encryption for integration secrets and BYOK AI keys
 - HTTPS/TLS in production with HSTS headers
+- **5-Layer AI Pipeline Sanitizer** — NoSQL injection prevention for all LLM-generated MongoDB queries
+- **Webhook HMAC Verification** (`X-Hub-Signature-256`) — GitHub push events validated with constant-time HMAC-SHA256 before dispatch
+- **Synchronous startup guard** — `ENCRYPTION_KEY` (32 chars), `PLATFORM_JWT_SECRET`, and `PLATFORM_MONGO_URI` enforced at boot
 
 See [Security Audit](docs/setup/security-audit.md) for the detailed assessment.
 

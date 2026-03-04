@@ -30,11 +30,24 @@ When a push event is received:
    ```
    https://api.agnox.dev/api/webhooks/ci/pr?token=<orgId>
    ```
-3. In your **GitHub** repository, go to **Settings → Webhooks → Add webhook**:
+3. In **Settings → Run Settings**, generate or enter a **Webhook Secret** and save it. This secret is used to sign every GitHub delivery.
+4. In your **GitHub** repository, go to **Settings → Webhooks → Add webhook**:
    - **Payload URL:** paste the copied URL
    - **Content type:** `application/json`
+   - **Secret:** paste the same **Webhook Secret** from step 3
    - **Events:** select **Just the push event**
    - Click **Add webhook**
+
+### HMAC Signature Verification
+
+Every inbound push event is validated using enterprise-grade **`X-Hub-Signature-256`** HMAC verification before any processing occurs:
+
+1. GitHub signs the raw request body with your Webhook Secret using HMAC-SHA256.
+2. The Agnox backend computes the expected signature server-side using the stored (encrypted) secret.
+3. The computed signature is compared using a **constant-time equality check** to prevent timing attacks.
+4. Requests without a valid `X-Hub-Signature-256` header, or with a mismatched signature, are rejected with `401 Unauthorized` — no task is dispatched.
+
+> **Setup requirement:** The `webhookSecret` field must be set in **Settings → Run Settings** and configured identically in the GitHub webhook form. Deliveries will be rejected until both sides match.
 
 ---
 

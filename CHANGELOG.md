@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.12.0] — 2026-03-04
+
+### Added
+- **Docusaurus documentation restructure** — Core user-facing docs migrated to `docs/` directory tree, organized into `getting-started/`, `core-features/`, `ai-capabilities/`, `integrations/`, `api-reference/`, and `architecture/` sections. Previous monolithic `user-guide.md` chunked into per-feature pages.
+- **SAST Critical/High vulnerability resolution** — All Critical and High severity findings from the security audit resolved. Security score advanced to 100/100.
+- **Synchronous startup guard** — Producer service validates `ENCRYPTION_KEY` (exactly 32 chars), `PLATFORM_JWT_SECRET`, and `PLATFORM_MONGO_URI` at process boot; service refuses to start on any missing or malformed required secret.
+- **`ENCRYPTION_KEY` enforcement** — Startup guard enforces exactly 32 characters for the AES-256-GCM key; documented in `docs/getting-started/installation.md` under "Backend Startup Requirements".
+- **Webhook HMAC signature validation** — PR Routing endpoint (`POST /api/webhooks/ci/pr`) now enforces `X-Hub-Signature-256` HMAC-SHA256 verification with constant-time comparison; unsigned or tampered GitHub deliveries rejected 401 before any task dispatch. Requires `webhookSecret` set in Settings → Run Settings and mirrored in the GitHub webhook form.
+- **5-Layer AI Pipeline Sanitizer** (`utils/chat-sanitizer.ts`) — Formally documented: stage allowlist, forced `organizationId` injection, `$limit` cap (max 1,000), collection whitelist (`executions`, `test_cycles` only), recursive operator scan. `PipelineSanitizationError` thrown on any violation.
+- **Shift-left data redaction** — Credential field values (`password`, `token`, `secret`, `key`, `apiKey`, `authorization`) stripped from AI prompts before LLM transmission.
+- **Prompt injection denylist** — Inbound chatbot messages scanned for known injection phrases (`ignore previous instructions`, `act as`, etc.); matched requests rejected 400.
+- **Rate limiting isolation** — Ingest and AI endpoints use independently tuned Redis rate limiters (Ingest events: 500 req/min; AI chat: separate limit) to prevent cross-feature interference.
+
+### Changed
+- `docs/getting-started/installation.md` — Added "Backend Startup Requirements" section with required env var table (`ENCRYPTION_KEY`, `PLATFORM_JWT_SECRET`, `PLATFORM_MONGO_URI`) and optional platform keys.
+- `docs/ai-capabilities/pr-routing.md` — GitHub Setup section updated with Webhook Secret step (step 3) and new "HMAC Signature Verification" subsection documenting the full validation pipeline.
+- `docs/ai-capabilities/chatbot.md` — "Security Model" renamed to "Security Model & Defense-in-Depth"; added Layer 0 (shift-left data redaction) and Layer 0.5 (prompt injection denylist) before the existing 5-layer table.
+- `README.md` — "Enterprise-Grade Security" section extended with three new bullets: 5-Layer AI Sanitizer, Webhook HMAC Verification, Synchronous Startup Guard. "Security" section score updated from 92/100 to 100/100; same three bullets added.
+- `PROJECT_CONTEXT.md` — Security Posture section extended with four new bullets reflecting all security hardening additions.
+- `.agents/doc-sync/SKILL.md` — Bumped to v1.2.0; target documents updated to reference `docs/**/*.md` dynamic scan in place of deprecated `docs/architecture/overview.md` and `docs/features/user-guide.md` paths.
+- `package.json` — Version bumped from `3.11.0` to `3.12.0`.
+
 ## [3.11.0] — 2026-03-03
 
 ### Changed

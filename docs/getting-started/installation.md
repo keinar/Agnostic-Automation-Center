@@ -98,6 +98,31 @@ Store per-project credentials and configuration values securely in **Settings �
 
 ---
 
+## Backend Startup Requirements
+
+The Agnox producer service uses a **synchronous startup guard** that validates all critical environment variables at process boot. If any required variable is absent or malformed, the process exits with a non-zero code before accepting any connections — preventing silent misconfiguration in production.
+
+### Strictly Required Environment Variables
+
+| Variable | Format | Description |
+|----------|--------|-------------|
+| `ENCRYPTION_KEY` | Exactly **32 characters** (hex or ASCII) | AES-256-GCM key for encrypting integration secrets, BYOK API keys, and project env var secrets. The startup guard enforces the exact length — any deviation causes an immediate startup failure. |
+| `PLATFORM_JWT_SECRET` | Any non-empty string (≥ 32 chars recommended) | Signs all user JWT access tokens. Rotation requires all active sessions to re-authenticate. |
+| `PLATFORM_MONGO_URI` | Valid MongoDB connection string | Primary database connection. The startup guard validates that a ping succeeds before the HTTP server binds to its port. |
+
+> **Self-hosting:** All three variables must be set in your deployment environment (e.g., `docker-compose.yml`, Kubernetes Secret, or `.env`). The platform will refuse to start without them.
+
+### Optional Platform Keys
+
+| Variable | Description |
+|----------|-------------|
+| `PLATFORM_GEMINI_API_KEY` | Fallback Gemini API key when no org-level BYOK key is configured |
+| `PLATFORM_OPENAI_API_KEY` | Fallback OpenAI API key |
+| `PLATFORM_ANTHROPIC_API_KEY` | Fallback Anthropic API key |
+| `MONITORING_SECRET_KEY` | Shared secret for the internal `/api/system/monitor-status` endpoint |
+
+---
+
 ## Next Steps
 
 - [Quick Start →](./quick-start) — run your first test

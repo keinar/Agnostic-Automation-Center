@@ -184,6 +184,10 @@ Agnox operates as a **Dual Architecture** platform: tests can be executed via th
 - Stripe webhook signature verification
 - Audit logging for admin actions
 - Soft deletion preserves billing accuracy
+- **5-Layer AI Pipeline Sanitizer** (`chat-sanitizer.ts`): stage allowlist, forced `organizationId`, `$limit` cap, collection whitelist, operator scan — all LLM-generated MongoDB pipelines sanitized before execution
+- **Webhook HMAC Verification** (`X-Hub-Signature-256`): PR Routing endpoint validates GitHub push signatures using constant-time HMAC-SHA256 comparison; unsigned requests rejected 401
+- **Synchronous startup guard**: `ENCRYPTION_KEY` (32 chars enforced), `PLATFORM_JWT_SECRET`, `PLATFORM_MONGO_URI` validated at boot — service refuses to start on misconfiguration
+- **Shift-left data redaction**: credential field values stripped from AI prompts before LLM transmission; prompt injection denylist rejects known override phrases
 
 ---
 
