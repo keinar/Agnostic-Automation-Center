@@ -34,18 +34,18 @@ const API_URL = isProduction
 type Verdict = 'stable' | 'mostly_stable' | 'flaky' | 'highly_flaky';
 
 interface IStabilityReport {
-    groupName:          string;
+    groupName: string;
     executionsAnalyzed: number;
-    passRate:           number;
-    flakinessScore:     number;
-    verdict:            Verdict;
-    findings:           string[];
-    recommendations:    string[];
+    passRate: number;
+    flakinessScore: number;
+    verdict: Verdict;
+    findings: string[];
+    recommendations: string[];
 }
 
 /** Persisted history record — extends the live report with DB identity fields. */
 interface IHistoricalReport extends IStabilityReport {
-    _id:       string;
+    _id: string;
     createdAt: string;
 }
 
@@ -58,28 +58,28 @@ const VERDICT_CONFIG: Record<Verdict, {
     gaugeClass: string;
 }> = {
     stable: {
-        label:      'Stable',
+        label: 'Stable',
         badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
         gaugeClass: 'bg-emerald-500',
-        Icon:       CheckCircle2,
+        Icon: CheckCircle2,
     },
     mostly_stable: {
-        label:      'Mostly Stable',
+        label: 'Mostly Stable',
         badgeClass: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
         gaugeClass: 'bg-blue-500',
-        Icon:       TrendingUp,
+        Icon: TrendingUp,
     },
     flaky: {
-        label:      'Flaky',
+        label: 'Flaky',
         badgeClass: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800',
         gaugeClass: 'bg-yellow-500',
-        Icon:       Minus,
+        Icon: Minus,
     },
     highly_flaky: {
-        label:      'Highly Flaky',
+        label: 'Highly Flaky',
         badgeClass: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
         gaugeClass: 'bg-red-500',
-        Icon:       TrendingDown,
+        Icon: TrendingDown,
     },
 };
 
@@ -95,7 +95,7 @@ function formatDate(iso: string): string {
 
 async function fetchHistory(groupName: string, token: string): Promise<IHistoricalReport[]> {
     const { data } = await axios.get(`${API_URL}/api/ai/stability-reports`, {
-        params:  { groupName },
+        params: { groupName },
         headers: { Authorization: `Bearer ${token}` },
     });
     return data.success ? (data.data.reports as IHistoricalReport[]) : [];
@@ -108,12 +108,12 @@ export function StabilityPage() {
     const groupNames = useGroupNames();
 
     const [selectedGroup, setSelectedGroup] = useState('');
-    const [analyzing, setAnalyzing]         = useState(false);
-    const [report, setReport]               = useState<IStabilityReport | null>(null);
-    const [error, setError]                 = useState<string | null>(null);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [report, setReport] = useState<IStabilityReport | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // History state
-    const [history, setHistory]           = useState<IHistoricalReport[]>([]);
+    const [history, setHistory] = useState<IHistoricalReport[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [isHistoricalView, setIsHistoricalView] = useState(false);
 
@@ -151,7 +151,7 @@ export function StabilityPage() {
             if (data.success) {
                 setReport(data.data as IStabilityReport);
                 // Refresh history so the new report appears immediately
-                fetchHistory(selectedGroup, token!).then(setHistory).catch(() => {});
+                fetchHistory(selectedGroup, token!).then(setHistory).catch(() => { });
             } else {
                 setError(data.error ?? 'Analysis failed. Please try again.');
             }
@@ -171,7 +171,7 @@ export function StabilityPage() {
     const verdictCfg = report ? VERDICT_CONFIG[report.verdict] ?? VERDICT_CONFIG.flaky : null;
 
     return (
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        <div data-testid="stability-page" className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
 
             {/* ── Page header ─────────────────────────────────────────── */}
             <div className="flex items-center gap-3 mb-2">
@@ -207,6 +207,7 @@ export function StabilityPage() {
                         <div className="relative inline-block w-full max-w-sm">
                             <select
                                 id="stability-group"
+                                data-testid="stability-group-select"
                                 value={selectedGroup}
                                 onChange={(e) => {
                                     setSelectedGroup(e.target.value);
@@ -233,6 +234,7 @@ export function StabilityPage() {
                 <div>
                     <button
                         type="button"
+                        data-testid="stability-analyze-button"
                         onClick={handleAnalyze}
                         disabled={!selectedGroup || analyzing}
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

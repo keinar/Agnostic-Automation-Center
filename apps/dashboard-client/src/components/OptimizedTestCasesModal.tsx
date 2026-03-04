@@ -238,9 +238,9 @@ export function OptimizedTestCasesModal({
     testCasesLookup,
 }: OptimizedTestCasesModalProps) {
     const { token } = useAuth();
-    const [applyingId, setApplyingId]   = useState<string | null>(null);
-    const [appliedIds, setAppliedIds]   = useState<Set<string>>(new Set());
-    const [applyError, setApplyError]   = useState<string | null>(null);
+    const [applyingId, setApplyingId] = useState<string | null>(null);
+    const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+    const [applyError, setApplyError] = useState<string | null>(null);
 
     /** Shared PUT logic — builds the full body required by the backend endpoint. */
     async function applyTestCase(id: string): Promise<void> {
@@ -342,7 +342,7 @@ export function OptimizedTestCasesModal({
                         leaveFrom="opacity-100 scale-100"
                         leaveTo="opacity-0 scale-95"
                     >
-                        <DialogPanel className="w-full max-w-4xl max-h-[80vh] flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark shadow-2xl">
+                        <DialogPanel data-testid="optimizer-modal" className="w-full max-w-4xl max-h-[80vh] flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark shadow-2xl">
 
                             {/* Header */}
                             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-gh-border-dark shrink-0">

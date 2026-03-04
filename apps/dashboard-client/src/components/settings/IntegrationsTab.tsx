@@ -64,11 +64,11 @@ export function IntegrationsTab() {
                 },
                 steps: [
                     {
-                        element: '[data-testid="integrations-slack-card"]',
+                        element: '[data-testid="integrations-container"]',
                         popover: {
-                            title: 'Add Your Webhooks',
+                            title: 'Add Your Webhooks & Integrations',
                             description:
-                                'Add your Slack webhook URL here to get real-time alerts whenever a test run fails or becomes unstable. Connect Jira above to auto-create tickets from failures.',
+                                'Integrate with Slack, Jira, GitHub, and more. Add your Slack webhook URL to get real-time alerts whenever a test run fails, or connect Jira to auto-create tickets from failures.',
                             side: 'top',
                             align: 'start',
                         },
@@ -79,7 +79,7 @@ export function IntegrationsTab() {
         }, 400);
 
         return () => clearTimeout(timerId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // run once on mount — navigate already stripped the param
 
     // ── Jira state ────────────────────────────────────────────────────────────
@@ -310,7 +310,7 @@ export function IntegrationsTab() {
     }
 
     return (
-        <div className="max-w-2xl">
+        <div className="max-w-2xl" data-testid="integrations-container">
             {/* Section heading */}
             <div className="mb-6">
                 <h2 className="text-base font-semibold text-slate-900 dark:text-gh-text-dark">Integrations</h2>

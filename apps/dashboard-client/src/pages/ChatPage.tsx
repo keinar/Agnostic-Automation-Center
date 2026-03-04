@@ -101,8 +101,8 @@ function MessageBubble({ message }: { message: IMessage }) {
         <div className={`flex items-end gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
             <div
                 className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isUser
-                        ? 'bg-slate-200 dark:bg-slate-700'
-                        : 'bg-blue-100 dark:bg-blue-900'
+                    ? 'bg-slate-200 dark:bg-slate-700'
+                    : 'bg-blue-100 dark:bg-blue-900'
                     }`}
             >
                 {isUser
@@ -112,8 +112,8 @@ function MessageBubble({ message }: { message: IMessage }) {
             </div>
             <div
                 className={`max-w-[90%] md:max-w-[70%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-sm ${isUser
-                        ? 'bg-blue-600 text-white rounded-br-sm'
-                        : 'bg-white dark:bg-gh-bg-subtle-dark text-slate-800 dark:text-gh-text-dark border border-slate-200 dark:border-gh-border-dark rounded-bl-sm'
+                    ? 'bg-blue-600 text-white rounded-br-sm'
+                    : 'bg-white dark:bg-gh-bg-subtle-dark text-slate-800 dark:text-gh-text-dark border border-slate-200 dark:border-gh-border-dark rounded-bl-sm'
                     }`}
             >
                 <p className="whitespace-pre-wrap">{message.content}</p>
@@ -255,8 +255,8 @@ function HistorySidebar({
                                 key={s.conversationId}
                                 onClick={() => { onSelect(s.conversationId); onClose(); }}
                                 className={`w-full text-left px-3 py-2.5 rounded-lg mb-0.5 transition-colors group ${activeId === s.conversationId
-                                        ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
-                                        : 'text-slate-700 dark:text-gh-text-dark hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
+                                    ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                                    : 'text-slate-700 dark:text-gh-text-dark hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
                                     }`}
                             >
                                 <p className="text-[12px] font-medium leading-snug truncate">{s.title}</p>
@@ -437,7 +437,7 @@ export function ChatPage() {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="flex h-full max-h-[calc(100vh-64px)] bg-gh-bg-subtle dark:bg-gh-bg-dark overflow-hidden">
+        <div data-testid="chat-page" className="flex h-full max-h-[calc(100vh-64px)] bg-gh-bg-subtle dark:bg-gh-bg-dark overflow-hidden">
 
             {/* ── Left: history sidebar ─────────────────────────────────────── */}
             <HistorySidebar
@@ -498,9 +498,10 @@ export function ChatPage() {
 
                 {/* Input bar */}
                 <div className="flex-shrink-0 px-3 py-3 md:px-6 md:py-4 border-t border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark">
-                    <form onSubmit={(e) => handleSubmit(e)} className="flex items-end gap-2 md:gap-3">
+                    <form data-testid="chat-input-form" onSubmit={(e) => handleSubmit(e)} className="flex items-end gap-2 md:gap-3">
                         <textarea
                             ref={inputRef}
+                            data-testid="chat-input"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
@@ -513,6 +514,7 @@ export function ChatPage() {
                         />
                         <button
                             type="submit"
+                            data-testid="chat-send-button"
                             disabled={isSending || isLoadingConv || input.trim().length === 0}
                             className="flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors"
                             aria-label="Send message"

@@ -40,9 +40,9 @@ interface AutoBugModalProps {
 
 const SEVERITY_STYLES: Record<string, string> = {
     critical: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
-    high:     'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800',
-    medium:   'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800',
-    low:      'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
+    high: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800',
+    medium: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800',
+    low: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
 };
 
 const INPUT_CLASS =
@@ -86,17 +86,17 @@ function buildJiraDescription(report: IBugReport): string {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export function AutoBugModal({ execution, bugReport, onClose }: AutoBugModalProps) {
-    const [title, setTitle]               = useState(bugReport.title);
-    const [severity, setSeverity]         = useState(bugReport.severity);
-    const [steps, setSteps]               = useState<string[]>(
+    const [title, setTitle] = useState(bugReport.title);
+    const [severity, setSeverity] = useState(bugReport.severity);
+    const [steps, setSteps] = useState<string[]>(
         bugReport.stepsToReproduce.length > 0 ? bugReport.stepsToReproduce : [''],
     );
-    const [expected, setExpected]         = useState(bugReport.expectedBehavior);
-    const [actual, setActual]             = useState(bugReport.actualBehavior);
-    const [patches, setPatches]           = useState<ICodePatch[]>(bugReport.codePatches);
-    const [rawAnalysis]                   = useState(bugReport.rawAnalysis);
-    const [showJira, setShowJira]         = useState(false);
-    const [showRaw, setShowRaw]           = useState(false);
+    const [expected, setExpected] = useState(bugReport.expectedBehavior);
+    const [actual, setActual] = useState(bugReport.actualBehavior);
+    const [patches, setPatches] = useState<ICodePatch[]>(bugReport.codePatches);
+    const [rawAnalysis] = useState(bugReport.rawAnalysis);
+    const [showJira, setShowJira] = useState(false);
+    const [showRaw, setShowRaw] = useState(false);
 
     // ── Step helpers ───────────────────────────────────────────────────────────
 
@@ -123,8 +123,8 @@ export function AutoBugModal({ execution, bugReport, onClose }: AutoBugModalProp
         title, severity: severity as IBugReport['severity'],
         stepsToReproduce: steps.filter((s) => s.trim()),
         expectedBehavior: expected,
-        actualBehavior:   actual,
-        codePatches:      patches,
+        actualBehavior: actual,
+        codePatches: patches,
         rawAnalysis,
     };
 
@@ -143,7 +143,7 @@ export function AutoBugModal({ execution, bugReport, onClose }: AutoBugModalProp
             onClick={handleBackdropClick}
             onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
         >
-            <div className="relative w-full max-w-2xl bg-white dark:bg-gh-bg-dark rounded-2xl shadow-2xl border border-slate-200 dark:border-gh-border-dark flex flex-col max-h-[90vh]">
+            <div data-testid="auto-bug-modal" className="relative w-full max-w-2xl bg-white dark:bg-gh-bg-dark rounded-2xl shadow-2xl border border-slate-200 dark:border-gh-border-dark flex flex-col max-h-[90vh]">
 
                 {/* ── Header ── */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-gh-border-dark flex-shrink-0">

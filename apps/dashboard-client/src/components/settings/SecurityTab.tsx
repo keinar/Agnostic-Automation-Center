@@ -14,14 +14,14 @@ interface IAiConfigState {
 }
 
 const MODEL_LABELS: Record<LlmModel, string> = {
-    'gemini-2.5-flash':  'Gemini 2.5 Flash (Google)',
-    'gpt-4o':            'GPT-4o (OpenAI)',
+    'gemini-2.5-flash': 'Gemini 2.5 Flash (Google)',
+    'gpt-4o': 'GPT-4o (OpenAI)',
     'claude-3-5-sonnet': 'Claude 3.5 Sonnet (Anthropic)',
 };
 
 const PROVIDER_LABELS: Record<LlmProvider, string> = {
-    gemini:    'Google Gemini',
-    openai:    'OpenAI',
+    gemini: 'Google Gemini',
+    openai: 'OpenAI',
     anthropic: 'Anthropic',
 };
 
@@ -138,11 +138,10 @@ export function SecurityTab() {
         <div>
             {/* Feedback banner */}
             {message && (
-                <div className={`mb-6 px-4 py-3 rounded-lg text-sm border ${
-                    message.type === 'success'
+                <div className={`mb-6 px-4 py-3 rounded-lg text-sm border ${message.type === 'success'
                         ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
                         : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
-                }`}>
+                    }`}>
                     {message.text}
                 </div>
             )}
@@ -188,7 +187,7 @@ export function SecurityTab() {
             </section>
 
             {/* ── Bring Your Own Key ───────────────────────────────────────── */}
-            <section className="mb-8">
+            <section data-testid="byok-section" className="mb-8">
                 <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
                     <Key size={20} />
                     Bring Your Own Key (BYOK)
@@ -203,7 +202,7 @@ export function SecurityTab() {
                     {(['gemini', 'openai', 'anthropic'] as LlmProvider[]).map(provider => {
                         const configured = config.byokConfigured[provider];
                         const isRemoving = removingKey === provider;
-                        const isSaving   = savingKey   === provider;
+                        const isSaving = savingKey === provider;
 
                         return (
                             <div key={provider} className="flex flex-col gap-3 px-5 py-4 bg-white dark:bg-gh-bg-dark">
@@ -218,11 +217,10 @@ export function SecurityTab() {
                                         <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                                             {PROVIDER_LABELS[provider]}
                                         </span>
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                            configured
+                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${configured
                                                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                                        }`}>
+                                            }`}>
                                             {configured ? 'Configured' : 'Using Platform Default'}
                                         </span>
                                     </div>
