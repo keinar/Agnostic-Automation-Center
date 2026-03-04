@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Agnox',
-  tagline: 'The Unified QA Platform: Seamlessly integrate automated pipelines, manage manual test cycles, and debug failures instantly with AI.',
+  tagline: 'The AI Quality Orchestrator: Unified test execution, manual QA workflows, and five AI-powered features in one platform.',
   favicon: 'img/favicon.png',
 
   future: {
@@ -83,12 +83,17 @@ const config: Config = {
           label: 'Docs',
         },
         {
-          to: '/docs/integration/quickstart',
+          to: '/docs/getting-started/quick-start',
           label: 'Quick Start',
           position: 'left',
         },
         {
-          to: '/docs/api',
+          to: '/docs/ai-capabilities/configuration',
+          label: 'AI Features',
+          position: 'left',
+        },
+        {
+          to: '/docs/api-reference/api-overview',
           label: 'API',
           position: 'left',
         },
@@ -107,15 +112,19 @@ const config: Config = {
           items: [
             {
               label: 'Quick Start',
-              to: '/docs/integration/quickstart',
+              to: '/docs/getting-started/quick-start',
+            },
+            {
+              label: 'AI Features',
+              to: '/docs/ai-capabilities/configuration',
             },
             {
               label: 'API Reference',
-              to: '/docs/api',
+              to: '/docs/api-reference/api-overview',
             },
             {
               label: 'Deployment',
-              to: '/docs/setup/deployment',
+              to: '/docs/architecture/deployment',
             },
           ],
         },

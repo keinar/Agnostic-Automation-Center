@@ -8,30 +8,87 @@ import Heading from '@theme/Heading';
 import styles from './index.module.css';
 
 function HomepageHeader() {
-  const { siteConfig } = useDocusaurusContext();
   return (
-    <header className={clsx('hero', styles.heroBanner)}>
+    <header className={styles.heroBanner}>
+      <div className={styles.heroGlow} aria-hidden />
       <div className="container">
+        <div className={styles.heroBadge}>AI Quality Orchestrator</div>
         <Heading as="h1" className={styles.heroTitle}>
-          {siteConfig.title}
+          Ship with confidence.<br />
+          <span className={styles.heroTitleAccent}>Debug at the speed of AI.</span>
         </Heading>
         <p className={styles.heroSubtitle}>
-          {siteConfig.tagline}
+          Agnox unifies test execution, manual QA, and intelligent AI analysis
+          into one platform — so your team stops guessing and starts shipping.
         </p>
         <div className={styles.buttons}>
-          <Link
-            className="button button--primary button--lg"
-            to="/docs/architecture/overview">
-            Read the Docs →
+          <Link className={clsx('button button--lg', styles.buttonPrimary)} to="/docs/getting-started/quick-start">
+            Get Started Free →
           </Link>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/integration/quickstart">
-            Quick Start
+          <Link className={clsx('button button--lg', styles.buttonSecondary)} to="/docs/getting-started/intro">
+            Read the Docs
           </Link>
         </div>
       </div>
     </header>
+  );
+}
+
+type QuickCard = {
+  icon: string;
+  title: string;
+  description: string;
+  href: string;
+  color: string;
+};
+
+const QuickCards: QuickCard[] = [
+  {
+    icon: '🚀',
+    title: 'Quick Start',
+    description: 'Connect your CI or Docker image and run your first test in minutes.',
+    href: '/docs/getting-started/quick-start',
+    color: '#6778d6',
+  },
+  {
+    icon: '🧠',
+    title: 'AI Features',
+    description: 'Auto-Bug Generator, Flakiness Detective, Smart Optimizer, and more.',
+    href: '/docs/ai-capabilities/configuration',
+    color: '#9b6dd6',
+  },
+  {
+    icon: '⚙️',
+    title: 'Integrations',
+    description: 'Connect Playwright, GitHub Actions, Slack, Jira, and Docker.',
+    href: '/docs/integrations/playwright-reporter',
+    color: '#6db8d6',
+  },
+  {
+    icon: '📚',
+    title: 'API Reference',
+    description: 'Complete REST API docs — authentication, organizations, users, and more.',
+    href: '/docs/api-reference/api-overview',
+    color: '#6dd69b',
+  },
+];
+
+function QuickAccess(): ReactNode {
+  return (
+    <section className={styles.quickAccess}>
+      <div className="container">
+        <div className={styles.quickGrid}>
+          {QuickCards.map((card) => (
+            <Link key={card.title} to={card.href} className={styles.quickCard} style={{ '--card-color': card.color } as React.CSSProperties}>
+              <div className={styles.quickCardIcon}>{card.icon}</div>
+              <Heading as="h3" className={styles.quickCardTitle}>{card.title}</Heading>
+              <p className={styles.quickCardDesc}>{card.description}</p>
+              <span className={styles.quickCardArrow}>→</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -44,61 +101,61 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     icon: '🔌',
-    title: 'Dual Architecture & CI Sync',
+    title: 'Dual Execution Modes',
     description:
-      'Stream results instantly from your existing GitHub Actions/GitLab pipelines using our native reporters, or let Agnox host and execute your containerized tests directly.',
+      'Stream results from your existing GitHub Actions/GitLab pipelines using the native Playwright reporter, or let Agnox host and execute your containerized tests directly.',
   },
   {
     icon: '🔬',
-    title: 'The Investigation Hub',
+    title: 'Investigation Hub',
     description:
-      'Triage failures instantly with a real-time streaming terminal and visual artifact gallery. Drill into screenshots, traces, and logs from a single, unified interface.',
+      'Triage failures instantly with a real-time streaming terminal and visual artifact gallery. Drill into screenshots, traces, and logs from one unified interface.',
   },
   {
     icon: '🤖',
     title: 'AI-Powered Triage',
     description:
-      'Automatic root-cause analysis and actionable fix recommendations powered by Gemini. Stop guessing why tests fail — get answers in seconds.',
+      'Dual-agent root-cause analysis delivers hallucination-resistant answers — an Analyzer generates the diagnosis, a Critic validates every claim against raw logs.',
   },
   {
     icon: '🎯',
     title: 'Quality Hub',
     description:
-      'Build a living manual test repository with suite-grouped test cases. Generate structured test steps instantly with AI — describe your intent and let Gemini do the rest.',
+      'Build a living manual test repository with suite-grouped test cases. Generate structured BDD test steps instantly with AI.',
   },
   {
     icon: '🔄',
     title: 'Hybrid Test Cycles',
     description:
-      'Combine manual and automated tests into unified cycles. Execute manual steps with an interactive player while automated items sync results in real time.',
+      'Combine manual and automated tests in unified cycles. Manual items get an interactive step-by-step player; automated items sync results in real time.',
   },
   {
     icon: '🔗',
     title: 'Enterprise Connectors',
     description:
-      'Create Jira tickets with one click directly from failed tests. Keep your team in the loop with real-time Slack notifications and custom Webhooks.',
+      'Create Jira tickets from failed tests with one click. Keep your team informed with Slack notifications and custom webhook integrations.',
   },
 ];
-
-function Feature({ icon, title, description }: FeatureItem) {
-  return (
-    <div className={clsx('col col--4')}>
-      <div className={styles.featureCard}>
-        <div className={styles.featureIcon}>{icon}</div>
-        <Heading as="h3" className={styles.featureTitle}>{title}</Heading>
-        <p className={styles.featureDescription}>{description}</p>
-      </div>
-    </div>
-  );
-}
 
 function HomepageFeatures(): ReactNode {
   return (
     <section className={styles.features}>
       <div className="container">
+        <div className={styles.sectionHeader}>
+          <Heading as="h2" className={styles.sectionTitle}>Everything your QA team needs</Heading>
+          <p className={styles.sectionSubtitle}>
+            From automated pipelines to manual test cycles — one platform for the entire quality lifecycle.
+          </p>
+        </div>
         <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
+          {FeatureList.map((item) => (
+            <div key={item.title} className={clsx('col col--4')}>
+              <div className={styles.featureCard}>
+                <div className={styles.featureIcon}>{item.icon}</div>
+                <Heading as="h3" className={styles.featureTitle}>{item.title}</Heading>
+                <p className={styles.featureDescription}>{item.description}</p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -106,48 +163,27 @@ function HomepageFeatures(): ReactNode {
   );
 }
 
-type HighlightItem = {
-  icon: string;
-  title: string;
-  body: string;
+type StatItem = {
+  value: string;
+  label: string;
 };
 
-const highlights: HighlightItem[] = [
-  {
-    icon: '🗂️',
-    title: 'Single Source of Truth',
-    body: 'Stop jumping between your CI logs, Jira, and spreadsheets. Agnox centralizes your entire QA operation.',
-  },
-  {
-    icon: '⚡',
-    title: 'Zero-Config Setup',
-    body: "Drop our reporter into your Playwright, Cypress, or Pytest config, or let Agnox host your containerized runs. Watch your test results stream into a beautiful dashboard in seconds.",
-  },
-  {
-    icon: '🤝',
-    title: 'Empower Everyone',
-    body: 'From QA engineers writing manual steps to SDETs investigating flaky automated tests, Agnox speaks everyone\'s language.',
-  },
+const Stats: StatItem[] = [
+  { value: '5', label: 'AI-powered features' },
+  { value: '3', label: 'LLM providers (BYOK)' },
+  { value: '4', label: 'CI providers auto-detected' },
+  { value: '∞', label: 'Test frameworks supported' },
 ];
 
-function PlatformHighlights(): ReactNode {
+function PlatformStats(): ReactNode {
   return (
-    <section className={clsx('padding-vert--xl', styles.highlights)}>
+    <section className={styles.stats}>
       <div className="container">
-        <div className="text--center margin-bottom--lg">
-          <Heading as="h2">Why Choose Agnox?</Heading>
-          <p className={styles.highlightsSubtitle}>
-            Built for modern engineering teams who refuse to compromise on visibility, speed, or quality.
-          </p>
-        </div>
-        <div className="row">
-          {highlights.map(({ icon, title, body }) => (
-            <div key={title} className="col col--4 text--center">
-              <div className={styles.highlightCard}>
-                <div className={styles.highlightIcon}>{icon}</div>
-                <Heading as="h3" className={styles.highlightTitle}>{title}</Heading>
-                <p className={styles.highlightBody}>{body}</p>
-              </div>
+        <div className={styles.statsGrid}>
+          {Stats.map((s) => (
+            <div key={s.label} className={styles.statItem}>
+              <div className={styles.statValue}>{s.value}</div>
+              <div className={styles.statLabel}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -160,24 +196,24 @@ function FeatureShowcase(): ReactNode {
   return (
     <section className={clsx('padding-vert--xl', styles.showcase)}>
       <div className="container">
-        {/* Showcase 1 — Text Left / Image Right */}
+        {/* Showcase 1 — Investigation Hub */}
         <div className={clsx('row', styles.showcaseRow)}>
           <div className="col col--6">
             <div className={styles.showcaseText}>
-              <div className={styles.showcaseBadge}>The Investigation Hub</div>
+              <div className={styles.showcaseBadge}>Investigation Hub</div>
               <Heading as="h2" className={styles.showcaseHeading}>
-                Debug Failures in Seconds, Not Hours
+                Debug failures in seconds, not hours
               </Heading>
               <p className={styles.showcaseBody}>
-                Stop digging through raw CI logs. Agnox streams your test output in real time directly into a terminal built for debugging — so you see exactly what went wrong the moment it happens.
+                Stop digging through raw CI logs. Agnox streams your test output in real time into a terminal built for debugging — so you see exactly what went wrong the moment it happens.
               </p>
               <ul className={styles.showcaseList}>
-                <li>🖥️ <strong>Real-time streaming terminal</strong> — no more refreshing CI pages</li>
-                <li>🖼️ <strong>Visual artifact gallery</strong> — screenshots, traces, and videos at a glance</li>
-                <li>🤖 <strong>AI root-cause analysis</strong> — Gemini surfaces the fix, not just the failure</li>
+                <li><strong>Real-time streaming terminal</strong> — no more refreshing CI pages</li>
+                <li><strong>Visual artifact gallery</strong> — screenshots, traces, and videos at a glance</li>
+                <li><strong>Dual-agent AI analysis</strong> — surfaces the fix, not just the failure</li>
               </ul>
-              <Link className="button button--primary" to="/docs/features/user-guide">
-                Explore the Hub →
+              <Link className={clsx('button', styles.buttonPrimary)} to="/docs/core-features/executions">
+                Explore Executions →
               </Link>
             </div>
           </div>
@@ -185,40 +221,40 @@ function FeatureShowcase(): ReactNode {
             <div className={styles.showcaseImageWrapper}>
               <img
                 src="/img/dashboard-preview.png"
-                alt="Agnox Dashboard"
-                style={{ borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '100%', border: '1px solid #eaeaea' }}
+                alt="Agnox Investigation Hub"
+                className={styles.showcaseImage}
               />
             </div>
           </div>
         </div>
 
-        {/* Showcase 2 — Image Left / Text Right */}
+        {/* Showcase 2 — AI Orchestrator */}
         <div className={clsx('row', styles.showcaseRow)}>
           <div className="col col--6">
             <div className={styles.showcaseImageWrapper}>
               <img
                 src="/img/cycles-preview.png"
-                alt="Hybrid Test Cycles"
-                style={{ borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '100%', border: '1px solid #eaeaea' }}
+                alt="Agnox AI Quality Orchestrator"
+                className={styles.showcaseImage}
               />
             </div>
           </div>
           <div className="col col--6">
             <div className={styles.showcaseText}>
-              <div className={styles.showcaseBadge}>Hybrid Test Cycles</div>
+              <div className={styles.showcaseBadge}>AI Quality Orchestrator</div>
               <Heading as="h2" className={styles.showcaseHeading}>
-                Automated & Manual Tests, Finally Unified
+                Five AI features. One platform.
               </Heading>
               <p className={styles.showcaseBody}>
-                No more spreadsheets for manual QA alongside a separate dashboard for automation. Agnox brings them together in a single cycle — with live result sync and a dedicated interactive player for manual execution.
+                Enable the AI features your team actually needs — from auto-generating Jira bugs from failed logs to querying your test data in plain English.
               </p>
               <ul className={styles.showcaseList}>
-                <li>🔄 <strong>Unified cycle view</strong> — mix automated and manual items seamlessly</li>
-                <li>▶️ <strong>Interactive player</strong> — step-by-step manual execution with pass/fail controls</li>
-                <li>📊 <strong>Live progress tracking</strong> — watch the cycle complete in real time</li>
+                <li><strong>Auto-Bug Generator</strong> — structured, Jira-ready reports from logs</li>
+                <li><strong>Flakiness Detective</strong> — stability scores and actionable fixes</li>
+                <li><strong>Quality Chatbot</strong> — natural-language queries over your test data</li>
               </ul>
-              <Link className="button button--primary" to="/docs/testing/strategy">
-                Learn About Cycles →
+              <Link className={clsx('button', styles.buttonPrimary)} to="/docs/ai-capabilities/configuration">
+                Explore AI Features →
               </Link>
             </div>
           </div>
@@ -232,12 +268,13 @@ export default function Home(): ReactNode {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={siteConfig.title}
-      description="Agnox is the ultimate unified testing platform for modern engineering teams. External CI ingestion, hybrid test cycles, and AI-driven triage.">
+      title={`${siteConfig.title} — AI Quality Orchestrator`}
+      description="Agnox is the AI Quality Orchestrator for modern engineering teams. Unified test execution, manual QA, and five AI-powered features in one platform.">
       <HomepageHeader />
       <main>
+        <QuickAccess />
         <HomepageFeatures />
-        <PlatformHighlights />
+        <PlatformStats />
         <FeatureShowcase />
       </main>
     </Layout>
