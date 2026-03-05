@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.14.0] — 2026-03-05
+
+### Changed
+- **AI Model Artifact Persistence** — The specific AI model used for an analysis is now immutably recorded directly on the `Execution` object instead of relying on the organization's current default model.
+- **AI Analysis Pipeline Hardening** — Fixed a technical error in the AI analysis route and added `allure-playwright` fallback support.
+- **Bug Fixes** — Performed a comprehensive regression review across 22 uncommitted files and fixed 4 specific bugs.
+- `docs/core-features/executions.md` — Documented the new AI Model Artifact Persistence feature under the AI Root-Cause Analysis section.
+- `PROJECT_CONTEXT.md` — Added `aiModel` field to `executions` schema and updated feature registry to Phase 19 completion state. Version bumped to 3.14.0.
+- `PLAN.md` — Marked Phase 5 Smart Execution Analytics and pipeline hardening tasks as complete.
+- `package.json` — Version bumped from `3.13.0` to `3.14.0`.
+
 ## [3.13.0] — 2026-03-05
 
 ### Added

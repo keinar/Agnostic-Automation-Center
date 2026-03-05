@@ -143,6 +143,8 @@ When a test fails:
    - **Critic** — validates every claim against raw logs, eliminating hallucinations
 4. The final output is clean, developer-facing Markdown.
 
+**AI Model Artifact Persistence:** The specific `aiModel` used for the analysis is recorded as an immutable artifact alongside the execution, ensuring you always know which model generated the diagnosis, even if the organization's default model changes later.
+
 AI analysis can be disabled per-organization in **Settings → Organization**.
 
 ---
