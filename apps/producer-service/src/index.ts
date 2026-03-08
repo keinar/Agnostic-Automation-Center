@@ -1,12 +1,13 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import Redis from 'ioredis';
-import { createServer, connectToMongo, setupSocketIO } from './config/server.js';
+import { createServer, connectToMongo, setupSocketIO, getDbName } from './config/server.js';
 import { setupSecurityHeaders, setupGlobalAuth } from './config/middleware.js';
 import { setupRoutes } from './config/routes.js';
 import { rabbitMqService } from './rabbitmq.js';
 import { createAuthRateLimiter, createApiRateLimiter, createStrictRateLimiter, createCustomRateLimiter } from './middleware/rateLimiter.js';
 import { initScheduler, stopAllJobs } from './utils/scheduler.js';
+import { ZombieSweeperService } from './services/zombie-sweeper.js';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -70,13 +71,17 @@ const start = async () => {
         // Step 9: Initialize CRON scheduler (loads active schedules from DB)
         await initScheduler(dbClient);
 
+        // Step 10: Initialize Zombie Sweeper for idle timeouts
+        ZombieSweeperService.start(dbClient.db(getDbName()));
+
         app.log.info('🚀 Producer Service started successfully');
         app.log.info('📍 Listening on port 3000');
 
         // Graceful shutdown: stop all cron jobs before the process exits
         const shutdown = () => {
-            app.log.info('Received shutdown signal — stopping cron jobs...');
+            app.log.info('Received shutdown signal — stopping cron jobs and sweepers...');
             stopAllJobs();
+            ZombieSweeperService.stop();
             process.exit(0);
         };
 

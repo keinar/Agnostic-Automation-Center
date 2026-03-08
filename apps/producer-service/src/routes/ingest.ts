@@ -32,6 +32,23 @@ const _fallbackCleanupTimer = setInterval(() => {
 // Prevent the interval from blocking process exit
 _fallbackCleanupTimer.unref();
 
+// ── Heartbeat Activity Throttler ─────────────────────────────────────────────
+// Prevents MongoDB write amplification during high-throughput log ingestion.
+// Tracks the last time a taskId's `updatedAt` was refreshed in MongoDB.
+const HEARTBEAT_THROTTLE = new Map<string, number>();
+const HEARTBEAT_INTERVAL_MS = 60_000;
+
+// Periodic cleanup of stale heartbeat records to prevent memory leaks
+const _heartbeatCleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [taskId, lastUpdated] of HEARTBEAT_THROTTLE) {
+        if (now - lastUpdated > HEARTBEAT_INTERVAL_MS * 5) { // 5 mins stale
+            HEARTBEAT_THROTTLE.delete(taskId);
+        }
+    }
+}, 5 * 60_000);
+_heartbeatCleanupTimer.unref();
+
 // ── Zod Validation Schemas ───────────────────────────────────────────────────
 
 const CiContextSchema = z.object({
@@ -236,6 +253,7 @@ export async function ingestRoutes(
                     source: 'external-ci',
                     folder: 'all',
                     startTime: now,
+                    updatedAt: now, // Initial Heartbeat
                     config: { environment, envVars: {} },
                     tests: [],
                     trigger: ciContext?.source ?? 'webhook',
@@ -421,6 +439,21 @@ export async function ingestRoutes(
                 );
             });
 
+            // --- HEARTBEAT DB UPDATE (THROTTLED) ---
+            const nowMs = Date.now();
+            const lastUpdate = HEARTBEAT_THROTTLE.get(taskId) || 0;
+            if (nowMs - lastUpdate >= HEARTBEAT_INTERVAL_MS) {
+                HEARTBEAT_THROTTLE.set(taskId, nowMs);
+                executionsCollection.updateOne(
+                    { taskId, organizationId },
+                    { $set: { updatedAt: new Date(nowMs) } }
+                ).catch((err: unknown) => {
+                    app.log.warn({ taskId, err: String(err) }, '[ingest] Failed to update execution heartbeat');
+                    // Reset throttle if it failed so we try again next time sooner
+                    HEARTBEAT_THROTTLE.delete(taskId);
+                });
+            }
+
             // Extend session TTL on every event call to support test suites longer than 24 h.
             // Redis expire is idempotent and cheap; ignore failures.
             redis.expire(`${SESSION_KEY_PREFIX}${sessionId}`, SESSION_TTL_SECONDS).catch(() => { });
@@ -596,6 +629,7 @@ export async function ingestRoutes(
 
                 // Remove from in-memory fallback if present
                 SESSION_MEMORY_FALLBACK.delete(sessionId);
+                HEARTBEAT_THROTTLE.delete(taskId);
 
                 // Broadcast final status to the org room
                 const orgRoom = `org:${organizationId}`;
