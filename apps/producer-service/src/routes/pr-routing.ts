@@ -123,6 +123,7 @@ export async function prRoutingRoutes(
     // Response: { success: true, data: { taskId, targetFolder, dispatchedAt } }
 
     app.post('/api/webhooks/ci/pr', async (request, reply) => {
+      try {
         const query = request.query as Record<string, string>;
         const token = query.token;
 
@@ -215,40 +216,25 @@ export async function prRoutingRoutes(
         const fileList = changedFiles.slice(0, 100).join('\n');
         const baseFolder = runSettings.defaultTestFolder || 'tests';
 
-        const routingPrompt = `You are a smart CI test router. Your job is to map changed source files to the most relevant automated test folder.
-
-Base test folder configured for this project: "${baseFolder}"
+        const routingPrompt = `You are a test orchestrator. Based on the provided list of changed files, select the most relevant sub-folder within the 'tests/' directory. If the changes are in the 'src/' folder, map them to the corresponding test category (e.g., UI changes -> tests/ui). Return ONLY the path string.
 
 Changed files in this PR/push:
-${fileList}
-
-Analyze the changed files and determine which sub-folder or file pattern within "${baseFolder}" should be run to validate these changes.
-
-Return a single valid JSON object with EXACTLY two fields:
-- "targetFolder" (string): The specific sub-folder or glob pattern to run (e.g. "${baseFolder}/auth", "${baseFolder}/checkout/**"). If all tests should run, return "${baseFolder}".
-- "reasoning"    (string): A 1-2 sentence explanation of why these tests were selected.
-
-Your ENTIRE response must be a single valid JSON object. Do NOT include markdown or code fences.`;
+${fileList}`;
 
         app.log.info(`[pr-routing] Resolving test target for ${changedFiles.length} changed file(s) in org "${org.name}" using ${llmConfig.provider}/${llmConfig.model}`);
 
         let targetFolder = baseFolder;
-        let reasoning = '';
+        let reasoning = 'Routed by GitHub PR Webhook';
 
         try {
             const rawText = await callLlmText(routingPrompt, llmConfig);
-            const jsonText = stripCodeFences(rawText);
+            const cleanText = stripCodeFences(rawText).trim();
 
-            const parsed = JSON.parse(jsonText);
-
-            if (typeof parsed.targetFolder === 'string' && parsed.targetFolder.trim().length > 0) {
-                targetFolder = parsed.targetFolder.trim();
-            }
-            if (typeof parsed.reasoning === 'string') {
-                reasoning = parsed.reasoning.trim();
+            if (cleanText) {
+                targetFolder = cleanText;
             }
 
-            app.log.info(`[pr-routing] LLM selected folder: "${targetFolder}" — ${reasoning}`);
+            app.log.info(`[pr-routing] LLM selected folder: "${targetFolder}"`);
         } catch (llmErr: unknown) {
             // Non-fatal: fall back to the default test folder
             const msg = llmErr instanceof Error ? llmErr.message : String(llmErr);
@@ -282,6 +268,7 @@ Your ENTIRE response must be a single valid JSON object. Do NOT include markdown
             },
             groupName: `PR Routing — ${new Date().toISOString().slice(0, 10)}`,
             trigger: 'webhook' as const,
+            triggeredBy: 'GitHub',
         };
 
         await rabbitMqService.sendToQueue(task, priority);
@@ -297,6 +284,10 @@ Your ENTIRE response must be a single valid JSON object. Do NOT include markdown
                 dispatchedAt: new Date().toISOString(),
             },
         });
+      } catch (err) {
+        app.log.error(`[pr-routing] Unhandled exception: ${err instanceof Error ? err.message : String(err)}`);
+        return reply.status(500).send({ success: false, error: 'Internal Server Error' });
+      }
     });
 
     app.log.info('✅ PR Routing webhook registered');
