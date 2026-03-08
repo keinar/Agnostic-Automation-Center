@@ -1,0 +1,99 @@
+name: Nightly Full Regression
+
+on:
+  schedule:
+    # Runs at 03:00 UTC every day
+    - cron: '0 3 * * *'
+  # Allows manual trigger from the GitHub Actions UI for debugging
+  workflow_dispatch: 
+
+jobs:
+  full-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Shared Types
+        run: |
+          npm run build -w shared-types
+          npm run build -w @agnox/playwright-reporter
+
+      - name: Run Layer 1 - Worker Unit Tests (Suite B)
+        run: |
+          cd apps/worker-service
+          npm ci
+          npx vitest run tests/
+
+      - name: Install Playwright Browsers
+        run: |
+          cd tests
+          npm ci
+          npx playwright install --with-deps chromium
+      
+      - name: Start Infrastructure (CI Environment)
+        run: |
+          cat <<EOF > .env
+          PLATFORM_MONGO_URI=mongodb://mongodb:27017/automation_platform
+          PLATFORM_REDIS_URL=redis://redis:6379
+          PLATFORM_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+          PLATFORM_JWT_SECRET=ci-test-jwt-secret-for-pipeline-testing-64chars-minimum-required
+          PLATFORM_GEMINI_API_KEY=mock_gemini
+          PLATFORM_WORKER_CALLBACK_SECRET=ci-test-worker-callback-secret-64chars-minimum
+          PLATFORM_API_KEY_HMAC_SECRET=ci-test-hmac-secret-64chars-minimum
+          VITE_API_URL=http://localhost:3000/api
+          PUBLIC_API_URL=http://localhost:3000/api
+          NODE_ENV=production
+          STRIPE_SECRET_KEY=sk_test_mock_key
+          STRIPE_PUBLISHABLE_KEY=pk_test_mock_key
+          STRIPE_WEBHOOK_SECRET=whsec_mock
+          SENDGRID_API_KEY=SG.mock_sendgrid
+          PASSWORD_SALT_ROUNDS=10
+          ENCRYPTION_KEY=12345678901234567890123456789012
+          EOF
+          docker compose up -d
+
+      - name: Wait for Services
+        run: sleep 15
+
+      - name: Run Layer 2 - API Integration Tests
+        run: |
+          cd apps/producer-service
+          npm ci
+          npx vitest run src/routes/__tests__
+
+      - name: Seed Database (Create E2E Admin & Org)
+        run: |
+          echo "Seeding initial admin user and organization..."
+          curl -s -X POST http://localhost:3000/api/auth/signup \
+          -H "Content-Type: application/json" \
+          -d '{"email":"admin@test.com","password":"TestPass123!","name":"CI Admin","organizationName":"Agnox CI Org"}'
+          echo -e "\nSeed complete!"
+
+      - name: Run Layer 3 - Full E2E Tests (Smoke & Regression)
+        run: |
+          cd tests
+          # Executes both core flows and deep edge cases
+          npx playwright test --grep "@smoke|@regression"
+        env:
+          E2E_EMAIL: 'admin@test.com'
+          E2E_PASSWORD: 'TestPass123!'
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-playwright-report
+          path: |
+            tests/playwright-report/
+            tests/test-results/
+          retention-days: 7

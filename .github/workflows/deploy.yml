@@ -80,10 +80,10 @@ jobs:
           -d '{"email":"admin@test.com","password":"TestPass123!","name":"CI Admin","organizationName":"Agnox CI Org"}'
           echo -e "\nSeed complete!"
 
-      - name: Run Layer 3 - E2E Tests
+      - name: Run Layer 3 - E2E Tests (Smoke Only)
         run: |
           cd tests
-          npx playwright test
+          npx playwright test --grep "@smoke"
         env:
           E2E_EMAIL: 'admin@test.com'
           E2E_PASSWORD: 'TestPass123!'
@@ -187,7 +187,7 @@ jobs:
       - name: Wait for API to boot
         run: sleep 20
 
-      - name: Trigger Production E2E Tests on Agnox
+      - name: Trigger Production Full Regression on Agnox
         run: |
           curl -X POST https://api.agnox.dev/api/ci/trigger \
             -H "Content-Type: application/json" \
