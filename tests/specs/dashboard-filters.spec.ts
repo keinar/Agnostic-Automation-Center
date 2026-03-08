@@ -17,7 +17,7 @@ const createMockExecution = (id: string, status: string) => ({
 });
 
 test.describe('Suite D — Dashboard Filters', () => {
-    test('D-001: Filter by Status updates the execution list', async ({ page, baseURL }) => {
+    test('D-001: Filter by Status updates the execution list', { tag: ['@smoke', '@p1'] }, async ({ page, baseURL }) => {
         // 1. Mock the API endpoint
         // Playwright intercepts are evaluated in order of registration. Since we only
         // have one route handler for **/api/executions*, we inspect the query params dynamically.

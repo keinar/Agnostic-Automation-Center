@@ -2,7 +2,7 @@ import { test, expect } from '../fixtures/baseTest';
 import { baseExecutionMock, TEST_EXECUTION_ID } from '../utils/mockData';
 
 test.describe('Suite A — RBAC & Multi-Tenancy', () => {
-    test('A-006 (UI): Viewer Role Cannot Delete Executions', async ({ page, drawerPage, baseURL }) => {
+    test('A-006 (UI): Viewer Role Cannot Delete Executions', { tag: ['@regression', '@p1'] }, async ({ page, drawerPage, baseURL }) => {
         // 1. Setup all mocks through POM
         await drawerPage.mockAuthAsViewer(); // The new proxy method
 
@@ -25,7 +25,7 @@ test.describe('Suite A — RBAC & Multi-Tenancy', () => {
         await expect(deleteBtn).not.toBeVisible();
     });
 
-    test('A-008 (UI): Admin Cannot Demote the Last Admin', async ({ page, membersPage, baseURL }) => {
+    test('A-008 (UI): Admin Cannot Demote the Last Admin', { tag: ['@regression', '@p1'] }, async ({ page, membersPage, baseURL }) => {
         // 1. Set up mocks
         await membersPage.mockAuthAsAdmin();
         await membersPage.mockOrganization();

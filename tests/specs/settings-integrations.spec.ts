@@ -19,7 +19,7 @@ test.describe('Suite D — Settings & Integrations', () => {
         });
     });
 
-    test('D-001 (UI): Slack Webhook SSRF Protection', async ({ page, settingsPage, baseURL }) => {
+    test('D-001 (UI): Slack Webhook SSRF Protection', { tag: ['@regression', '@p1'] }, async ({ page, settingsPage, baseURL }) => {
         await settingsPage.mockOrganization(baseOrganizationMock);
         await settingsPage.mockAuthAsAdmin();
 
@@ -50,7 +50,7 @@ test.describe('Suite D — Settings & Integrations', () => {
         await expect(settingsPage.slackWebhookInput).toHaveValue('https://evil.com/webhook');
     });
 
-    test('D-008 (UI): Jira Domain SSRF Prevention', async ({ page, settingsPage, baseURL }) => {
+    test('D-008 (UI): Jira Domain SSRF Prevention', { tag: ['@regression', '@p1'] }, async ({ page, settingsPage, baseURL }) => {
         await settingsPage.mockOrganization(baseOrganizationMock);
         await settingsPage.mockAuthAsAdmin();
 
