@@ -36,7 +36,7 @@ interface ExecutionDrawerProps {
 
 export type DrawerTab = 'terminal' | 'tests' | 'artifacts' | 'ai-analysis';
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Component ───────────────────────────────────────────────────────────────
 
 export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }: ExecutionDrawerProps) {
   const { token } = useAuth();
